@@ -1,0 +1,74 @@
+name: home-iot
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      APP_NAME: Van der Stad Home
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${APP_KEY:?Set APP_KEY in .env.production}
+      APP_URL: https://home.iot.vanderstad.nl
+      LOG_CHANNEL: stderr
+      DB_CONNECTION: mysql
+      DB_HOST: database
+      DB_DATABASE: home
+      DB_USERNAME: home
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env.production}
+      SESSION_DRIVER: database
+      SESSION_SECURE_COOKIE: "true"
+      CACHE_STORE: database
+      HOMEY_URL: ${HOMEY_URL:-}
+      HOMEY_API_KEY: ${HOMEY_API_KEY:-}
+      HOMEY_LIVING_LIGHT_ID: ${HOMEY_LIVING_LIGHT_ID:-}
+      HOMEY_LIVING_CLIMATE_ID: ${HOMEY_LIVING_CLIMATE_ID:-}
+      TZ: Europe/Amsterdam
+    volumes:
+      - storage:/var/www/html/storage
+    networks:
+      - backend
+      - traefik
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, php, -r, "exit(@file_get_contents('http://127.0.0.1/up') === false ? 1 : 0);"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: ${TRAEFIK_NETWORK:-docker_default}
+      traefik.http.routers.home-iot.rule: Host(`home.iot.vanderstad.nl`)
+      traefik.http.routers.home-iot.entrypoints: websecure
+      traefik.http.routers.home-iot.tls: "true"
+      traefik.http.routers.home-iot.middlewares: home-iot-lan
+      traefik.http.middlewares.home-iot-lan.ipallowlist.sourcerange: ${LAN_ALLOWED_CIDRS:?Set your actual LAN subnet in .env.production}
+      traefik.http.services.home-iot.loadbalancer.server.port: "80"
+  database:
+    image: mariadb:11.8
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: home
+      MARIADB_USER: home
+      MARIADB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env.production}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env.production}
+      TZ: Europe/Amsterdam
+    volumes:
+      - database:/var/lib/mysql
+    networks:
+      - backend
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+networks:
+  backend:
+    internal: true
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:-docker_default}
+volumes:
+  storage:
+  database:
