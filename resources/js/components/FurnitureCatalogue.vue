@@ -31,7 +31,7 @@ const saving=ref(false),building=ref(false),saveError=ref(''),notice=ref('');
 const busy=computed(()=>saving.value||building.value||['queued','building'].includes(furnitureState.value?.status??''));
 const changed=computed(()=>(furnitureState.value?.items??[]).filter(i=>drafts.value[reference(i)]));
 const modelOutdated=computed(()=>!!furnitureState.value&&furnitureState.value.model_revision!==furnitureState.value.revision);
-const buildMessage=computed(()=>building.value?'Plattegrond starten…':({queued:'Wachten op opbouw…',building:'Plattegrond wordt opgebouwd. Het vorige model blijft zichtbaar.',failed:'Opbouwen mislukt. Je maten zijn opgeslagen; het vorige model blijft zichtbaar.'}[furnitureState.value?.status??'']??notice.value));
+const buildMessage=computed(()=>{if(building.value)return 'Plattegrond starten…';switch(furnitureState.value?.status){case 'queued':return 'Wachten op opbouw…';case 'building':return 'Plattegrond wordt opgebouwd. Het vorige model blijft zichtbaar.';case 'failed':return 'Opbouwen mislukt. Je maten zijn opgeslagen; het vorige model blijft zichtbaar.';default:return notice.value}});
 function value(i:Item,key:Dimension){return drafts.value[reference(i)]?.[key]??String(Math.round(i[key]*100000)/1000)}
 function edit(i:Item,key:Dimension,event:Event){if(editRevision.value===undefined)editRevision.value=furnitureState.value?.revision;const id=reference(i);drafts.value[id]??=Object.fromEntries(fields.map(f=>[f.key,value(i,f.key)])) as Record<Dimension,string>;drafts.value[id][key]=(event.target as HTMLInputElement).value;saveError.value='';notice.value=''}
 function discard(){drafts.value={};editRevision.value=undefined;saveError.value='';notice.value='';void refreshFurniture().catch(()=>{})}
