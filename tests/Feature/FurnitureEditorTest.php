@@ -20,20 +20,29 @@ class FurnitureEditorTest extends TestCase
         return array_replace(['floor' => 'ground', 'id' => '82', 'width' => 130, 'depth' => 40, 'height' => 90, 'base_z' => 0], $extra);
     }
 
-    public function test_dimensions_persist_and_one_background_build_is_queued(): void
+    public function test_dimensions_persist_without_queuing_a_build(): void
     {
         Queue::fake();
         $original = file_get_contents(base_path('assets/blender/furniture.json'));
         $this->putJson('/dashboard/furniture', ['revision' => 0, 'items' => [$this->change()]])
-            ->assertAccepted()->assertJsonPath('revision', 1)->assertJsonPath('status', 'queued');
-        Queue::assertPushed(BuildFurniture::class, fn ($job) => $job->revision === 1 && $job->connection === 'furniture');
-        Queue::assertPushed(BuildFurniture::class, 1);
+            ->assertOk()->assertJsonPath('revision', 1)->assertJsonPath('status', 'ready');
+        Queue::assertNothingPushed();
         $state = $this->getJson('/dashboard/furniture')->assertOk()->json();
         $item = collect($state['items'])->first(fn ($i) => $i['floor'] === 'ground' && $i['id'] === '82');
         $this->assertEquals(1.3, $item['width']);
         $this->assertEquals(.4, $item['depth']);
         $this->assertSame($original, file_get_contents(base_path('assets/blender/furniture.json')));
         $this->assertStringStartsWith('/models/', $state['models']['ground']);
+    }
+
+    public function test_build_endpoint_queues_exactly_one_background_build(): void
+    {
+        Queue::fake();
+        $this->putJson('/dashboard/furniture', ['revision' => 0, 'items' => [$this->change()]])->assertOk();
+        $this->postJson('/dashboard/furniture/build', ['revision' => 1])
+            ->assertAccepted()->assertJsonPath('revision', 1)->assertJsonPath('status', 'queued');
+        Queue::assertPushed(BuildFurniture::class, fn ($job) => $job->revision === 1 && $job->connection === 'furniture');
+        Queue::assertPushed(BuildFurniture::class, 1);
     }
 
     public function test_invalid_or_unknown_dimensions_are_rejected_without_saving_anything(): void
@@ -50,10 +59,12 @@ class FurnitureEditorTest extends TestCase
     public function test_building_or_stale_revision_cannot_be_overwritten(): void
     {
         Queue::fake();
-        $this->putJson('/dashboard/furniture', ['revision' => 0, 'items' => [$this->change()]])->assertAccepted();
+        $this->putJson('/dashboard/furniture', ['revision' => 0, 'items' => [$this->change()]])->assertOk();
+        $this->postJson('/dashboard/furniture/build', ['revision' => 1])->assertAccepted();
         $this->putJson('/dashboard/furniture', ['revision' => 1, 'items' => [$this->change(['width' => 200])]])->assertConflict();
         DB::table('furniture_layouts')->where('id', 1)->update(['status' => 'ready']);
         $this->putJson('/dashboard/furniture', ['revision' => 0, 'items' => [$this->change(['width' => 200])]])->assertConflict();
+        $this->postJson('/dashboard/furniture/build', ['revision' => 0])->assertConflict();
         Queue::assertPushed(BuildFurniture::class, 1);
     }
 
@@ -63,7 +74,7 @@ class FurnitureEditorTest extends TestCase
         $directory = sys_get_temp_dir().'/furniture-test-'.bin2hex(random_bytes(8));
         config(['furniture.blender' => '/bin/false', 'furniture.build_path' => $directory]);
         DB::table('furniture_layouts')->where('id', 1)->update(['model_revision' => 0]);
-        $this->putJson('/dashboard/furniture', ['revision' => 0, 'items' => [$this->change()]])->assertAccepted();
+        $this->putJson('/dashboard/furniture', ['revision' => 0, 'items' => [$this->change()]])->assertOk();
         $job = new BuildFurniture(1);
         try {
             $job->handle(app(FurnitureLayout::class));
@@ -74,7 +85,7 @@ class FurnitureEditorTest extends TestCase
             File::deleteDirectory($directory);
         }
         $this->getJson('/dashboard/furniture')->assertJsonPath('status', 'failed')->assertJsonPath('model_revision', 0);
-        $this->putJson('/dashboard/furniture', ['revision' => 1, 'items' => []])->assertAccepted()->assertJsonPath('revision', 2);
+        $this->postJson('/dashboard/furniture/build', ['revision' => 1])->assertAccepted()->assertJsonPath('revision', 1);
         $this->assertEquals(1.3, app(FurnitureLayout::class)->state()['items'][array_search('82', array_column(app(FurnitureLayout::class)->state()['items'], 'id'))]['width']);
     }
 
@@ -83,7 +94,7 @@ class FurnitureEditorTest extends TestCase
         Queue::fake();
         $directory = sys_get_temp_dir().'/furniture-test-'.bin2hex(random_bytes(8));
         config(['furniture.blender' => '/bin/true', 'furniture.build_path' => $directory]);
-        $this->putJson('/dashboard/furniture', ['revision' => 0, 'items' => [$this->change()]])->assertAccepted();
+        $this->putJson('/dashboard/furniture', ['revision' => 0, 'items' => [$this->change()]])->assertOk();
         $job = new BuildFurniture(1);
         try {
             $job->handle(app(FurnitureLayout::class));
