@@ -75,12 +75,24 @@ class FurnitureLayout
                     $overrides[$key][$field] = round($item[$field] / 100, 5);
                 }
             }
-            $revision = $row->revision + 1;
             DB::table('furniture_layouts')->where('id', 1)->update([
-                'revision' => $revision, 'overrides' => json_encode($overrides, JSON_THROW_ON_ERROR),
+                'revision' => $row->revision + 1, 'overrides' => json_encode($overrides, JSON_THROW_ON_ERROR),
+                'updated_at' => now(),
+            ]);
+        });
+
+        return $this->state();
+    }
+
+    public function build(int $revision): array
+    {
+        DB::transaction(function () use ($revision) {
+            $row = DB::table('furniture_layouts')->lockForUpdate()->find(1);
+            abort_if(in_array($row->status, ['queued', 'building']), 409, 'Er wordt al een plattegrond opgebouwd. Wacht tot deze klaar is.');
+            abort_if((int) $row->revision !== $revision, 409, 'De meubels zijn elders gewijzigd. Herlaad de lijst voor je de plattegrond opbouwt.');
+            DB::table('furniture_layouts')->where('id', 1)->update([
                 'status' => 'queued', 'started_at' => null, 'updated_at' => now(),
             ]);
-            // Same database transaction as the saved dimensions: no lost queued build.
             BuildFurniture::dispatch($revision)->onConnection('furniture')->onQueue('furniture');
         });
 
