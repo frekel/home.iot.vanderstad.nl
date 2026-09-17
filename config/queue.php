@@ -30,6 +30,10 @@ return [
     */
 
     'connections' => [
+        'furniture' => [
+            'driver' => 'database', 'table' => 'jobs', 'queue' => 'furniture',
+            'retry_after' => 1200, 'after_commit' => false,
+        ],
 
         'sync' => [
             'driver' => 'sync',

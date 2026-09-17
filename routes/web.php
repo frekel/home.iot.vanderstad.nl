@@ -1,12 +1,14 @@
 <?php
 
+use App\Services\FurnitureLayout;
 use App\Services\HomeyClient;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'dashboard');
 Route::get('/dashboard/status', function (HomeyClient $homey) {
-    $empty = ['connected' => false, 'devices' => [], 'rooms' => $homey->rooms([]), 'layout' => config('homey_layout'), 'zones' => []];
+    $empty = ['connected' => false, 'devices' => [], 'access' => $homey->access([]), 'rooms' => $homey->rooms([]), 'layout' => config('homey_layout'), 'zones' => []];
     if (! $homey->configured()) {
         return response()->json($empty + ['message' => 'Add the Homey address and API key to the server environment.'])
             ->header('Cache-Control', 'no-store');
@@ -26,7 +28,7 @@ Route::get('/dashboard/status', function (HomeyClient $homey) {
 
         return response()->json([
             'connected' => true, 'message' => 'Connected to Homey. Live data refreshes every 5 seconds.',
-            'devices' => $devices, 'rooms' => $homey->rooms($devices), 'zones' => $zones, 'layout' => config('homey_layout'), 'fetched_at' => now()->toIso8601String(),
+            'devices' => $devices, 'access' => $homey->access($devices), 'rooms' => $homey->rooms($devices), 'zones' => $zones, 'layout' => config('homey_layout'), 'fetched_at' => now()->toIso8601String(),
         ])->header('Cache-Control', 'no-store');
     } catch (Throwable) {
         return response()->json($empty + ['message' => 'Homey is unavailable. Live controls are disabled until it reconnects.'], 503)
@@ -47,3 +49,48 @@ Route::put('/dashboard/rooms/{room}/light', function (Request $request, string $
         return response()->json(['message' => 'The light command could not be confirmed. Refresh before trying again.'], 503);
     }
 })->middleware('throttle:20,1');
+
+Route::put('/dashboard/lights/{device}', function (Request $request, string $device, HomeyClient $homey) {
+    $request->validate(['value' => ['required', function ($attribute, $value, $fail) {
+        if (! is_bool($value)) {
+            $fail('The light state must be true or false.');
+        }
+    }]]);
+    try {
+        return response()->json($homey->setLight($device, $request->input('value')))->header('Cache-Control', 'no-store');
+    } catch (Throwable) {
+        return response()->json(['message' => 'The light command could not be confirmed. Check the lamp before trying again.'], 503);
+    }
+})->middleware('throttle:60,1');
+
+Route::get('/dashboard/energy', function (HomeyClient $homey) {
+    $energy = $homey->energy();
+
+    return response()->json($energy, $energy['available'] ? 200 : 503)->header('Cache-Control', 'no-store');
+})->middleware('throttle:30,1');
+
+Route::get('/dashboard/furniture', fn (FurnitureLayout $layout) => response()->json($layout->state())->header('Cache-Control', 'no-store'));
+Route::put('/dashboard/furniture', function (Request $request, FurnitureLayout $layout) {
+    $data = $request->validate([
+        'revision' => ['required', 'integer', 'min:0'],
+        'items' => ['present', 'array', 'max:200'],
+        'items.*' => ['array:floor,id,width,depth,height,base_z'],
+        'items.*.floor' => ['required', 'in:ground,upper,attic'],
+        'items.*.id' => ['required', 'string', 'max:64'],
+        'items.*.width' => ['required', 'numeric', 'min:5', 'max:1100'],
+        'items.*.depth' => ['required', 'numeric', 'min:1', 'max:550'],
+        'items.*.height' => ['required', 'numeric', 'min:1', 'max:400'],
+        'items.*.base_z' => ['required', 'numeric', 'min:0', 'max:300'],
+    ]);
+    $data['revision'] = (int) $data['revision'];
+
+    return response()->json($layout->save($data), 202);
+})->middleware('throttle:10,1');
+Route::get('/dashboard/furniture/models/{revision}/{floor}', function (int $revision, string $floor) {
+    $published = DB::table('furniture_layouts')->value('model_revision');
+    abort_if($published === null || $revision > $published, 404);
+    $path = config('furniture.build_path').'/'.$revision.'/'.$floor.'.glb';
+    abort_unless(is_file($path), 404);
+
+    return response()->file($path, ['Content-Type' => 'model/gltf-binary', 'Cache-Control' => 'public, max-age=31536000, immutable']);
+})->whereNumber('revision')->whereIn('floor', ['ground', 'upper', 'attic']);

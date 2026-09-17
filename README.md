@@ -105,3 +105,13 @@ Entrance and Dining are grouped with Woonkamer: one navigation entry and shared 
 selection. Upper-floor positions confirmed by the user: left bedroom Slaapkamer,
 right bedroom Levi, lower-left Bijspringer, lower-right Badkamer; the hallway is
 Eerste verdieping. Room labels do not expand the live-device control allowlist.
+
+The remaining confirmed mappings are Utility → Serverkast and attic hallway → Zolder.
+
+### Meubels aanpassen
+
+Open **Meubels**, selecteer een nummer en vul breedte, diepte, hoogte en de onderkant vanaf de vloer in centimeters in. Je kunt meerdere meubels op verschillende verdiepingen aanpassen en samen opslaan. De knop **Opslaan en plattegrond bijwerken** slaat de maten in de database op en zet één Blender-bouw in de wachtrij. Het vorige model blijft beschikbaar tot alle nieuwe modellen gereed zijn. De status blijft na sluiten of herladen behouden. Bij een fout kun je opnieuw opbouwen.
+
+DDEV installeert Blender en start de worker via `.ddev/config.furniture.yaml`; voer na ophalen van deze wijziging `ddev exec php artisan migrate --force` en `ddev restart` uit. Docker Compose bevat een aparte `furniture-worker` met dezelfde database en storage-volume als de webapp. Voer bij deployment ook de bestaande Laravel-migraties uit. Er is geen Node-build nodig na het wijzigen van meubelmaten.
+
+Overrides staan in `furniture_layouts`; gegenereerde modellen en logs staan onder `storage/app/furniture/<revisie>`. Maak een back-up van zowel de database als het storage-volume. `BLENDER_BINARY` kan het Blender-pad overschrijven (standaard `/usr/bin/blender`). Bouwlogs zijn alleen lokaal beschikbaar. De editor wijzigt maten rond het bestaande middelpunt; plaatsing en wandafstand worden niet automatisch opnieuw berekend. De hoge meubels behouden de bestaande afsnijding op muurhoogte.

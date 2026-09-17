@@ -4,10 +4,11 @@
 .env.*
 node_modules
 vendor
-assets
+assets/blender/*.blend*
 work
 outputs
 tests
+storage/app/furniture/*
 storage/logs/*
 storage/framework/cache/data/*
 storage/framework/sessions/*

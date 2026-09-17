@@ -1,0 +1,7 @@
+webimage_extra_packages:
+  - blender
+  - python3-numpy
+web_extra_daemons:
+  - name: furniture-worker
+    command: php artisan queue:work furniture --queue=furniture --sleep=2 --timeout=960 --tries=1
+    directory: /var/www/html

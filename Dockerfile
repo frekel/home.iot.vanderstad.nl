@@ -7,8 +7,8 @@ COPY resources ./resources
 RUN npm run typecheck && npm run build
 
 FROM php:8.4-apache-bookworm AS app
-RUN apt-get update && apt-get install -y --no-install-recommends libicu-dev libzip-dev unzip \
-    && docker-php-ext-install pdo_mysql intl zip opcache \
+RUN apt-get update && apt-get install -y --no-install-recommends libicu-dev libzip-dev unzip blender python3-numpy \
+    && docker-php-ext-install pdo_mysql intl zip opcache pcntl \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer

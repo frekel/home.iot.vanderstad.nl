@@ -68,4 +68,49 @@ class HomeyLightControlTest extends TestCase
         $this->putJson('/dashboard/rooms/living/light', ['value' => false])->assertStatus(503);
         Http::assertNotSent(fn ($r) => $r->method() === 'PUT');
     }
+
+    public function test_an_unmapped_homey_light_can_be_controlled_by_id(): void
+    {
+        $this->fakeDevice();
+        config(['homey.rooms' => []]);
+        $this->putJson('/dashboard/lights/allowed-light', ['value' => false])
+            ->assertOk()->assertJson(['accepted' => true, 'requested' => false]);
+        Http::assertSent(fn ($r) => $r->method() === 'PUT' && $r['value'] === false);
+        Http::assertSentCount(2);
+    }
+
+    public function test_device_endpoint_rejects_non_boolean_states(): void
+    {
+        $this->putJson('/dashboard/lights/allowed-light', ['value' => 'false'])->assertUnprocessable();
+        Http::assertNothingSent();
+    }
+
+    public function test_device_endpoint_rejects_unknown_devices_and_non_lights(): void
+    {
+        $this->fakeDevice(class: 'socket');
+        $this->putJson('/dashboard/lights/unknown', ['value' => true])->assertStatus(503);
+        $this->putJson('/dashboard/lights/allowed-light', ['value' => true])->assertStatus(503);
+        Http::assertNotSent(fn ($r) => $r->method() === 'PUT');
+    }
+
+    public function test_device_endpoint_rejects_unavailable_and_readonly_lights(): void
+    {
+        $this->fakeDevice(available: false, settable: false);
+        $this->putJson('/dashboard/lights/allowed-light', ['value' => true])->assertStatus(503);
+        Http::assertNotSent(fn ($r) => $r->method() === 'PUT');
+    }
+
+    public function test_homey_command_failure_is_reported_without_retry(): void
+    {
+        Http::fake([
+            'homey.test/api/manager/devices/device/' => Http::response(['lamp' => [
+                'id' => 'lamp', 'class' => 'light', 'available' => true,
+                'capabilitiesObj' => ['onoff' => ['value' => true, 'setable' => true]],
+            ]]),
+            'homey.test/api/manager/devices/device/lamp/capability/onoff' => Http::response(['error' => 'private upstream details'], 500),
+        ]);
+        $this->putJson('/dashboard/lights/lamp', ['value' => false])->assertStatus(503)
+            ->assertDontSee('private upstream details');
+        Http::assertSentCount(2);
+    }
 }
