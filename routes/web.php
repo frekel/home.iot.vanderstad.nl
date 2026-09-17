@@ -15,7 +15,6 @@ Route::get('/dashboard/status', function (HomeyClient $homey) {
     }
     try {
         $devices = $homey->devices();
-        // Zone permissions are optional: lack of them should not hide available device data.
         try {
             $zones = $homey->zones();
         } catch (Throwable) {
@@ -84,7 +83,12 @@ Route::put('/dashboard/furniture', function (Request $request, FurnitureLayout $
     ]);
     $data['revision'] = (int) $data['revision'];
 
-    return response()->json($layout->save($data), 202);
+    return response()->json($layout->save($data));
+})->middleware('throttle:30,1');
+Route::post('/dashboard/furniture/build', function (Request $request, FurnitureLayout $layout) {
+    $data = $request->validate(['revision' => ['required', 'integer', 'min:0']]);
+
+    return response()->json($layout->build((int) $data['revision']), 202);
 })->middleware('throttle:10,1');
 Route::get('/dashboard/furniture/models/{revision}/{floor}', function (int $revision, string $floor) {
     $published = DB::table('furniture_layouts')->value('model_revision');
