@@ -47,9 +47,11 @@ const allItems=computed(()=>rooms.value.flatMap(r=>r.items));
 const processed=computed(()=>new Set([...measured.value,...skipped.value]));
 const measuredCount=computed(()=>allItems.value.filter(i=>measured.value.has(reference(i))).length);
 const skippedCount=computed(()=>allItems.value.filter(i=>skipped.value.has(reference(i))).length);
+const processedCount=computed(()=>allItems.value.filter(i=>processed.value.has(reference(i))).length);
+const remainingCount=computed(()=>Math.max(0,allItems.value.length-processedCount.value));
 const roomMeasured=computed(()=>roomItems.value.filter(i=>measured.value.has(reference(i))).length);
 const roomProcessed=computed(()=>roomItems.value.filter(i=>processed.value.has(reference(i))).length);
-const progress=computed(()=>allItems.value.length?Math.round(processed.value.size/allItems.value.length*100):0);
+const progress=computed(()=>allItems.value.length?Math.round(processedCount.value/allItems.value.length*100):0);
 const modelOutdated=computed(()=>!!furnitureState.value&&furnitureState.value.model_revision!==furnitureState.value.revision);
 const buildBusy=computed(()=>building.value||['queued','building'].includes(furnitureState.value?.status??''));
 
@@ -59,7 +61,7 @@ function loadProgress(){
 function persist(){localStorage.setItem(measuredKey,JSON.stringify([...measured.value]));localStorage.setItem(skippedKey,JSON.stringify([...skipped.value]))}
 function resetProgress(){if(!confirm('Nieuwe meetronde starten? Alleen de vinkjes en overgeslagen status worden gewist; opgeslagen maten blijven behouden.'))return;measured.value=new Set();skipped.value=new Set();persist();roundFinished.value=false;roomKey.value=rooms.value[0]?.key??'';itemIndex.value=0;notice.value='Nieuwe meetronde gestart.'}
 function setMeasured(id:string){const next=new Set(measured.value);next.add(id);measured.value=next;const skip=new Set(skipped.value);skip.delete(id);skipped.value=skip;persist()}
-function setSkipped(id:string){const next=new Set(skipped.value);next.add(id);skipped.value=next;persist()}
+function setSkipped(id:string){const next=new Set(skipped.value);next.add(id);skipped.value=next;const done=new Set(measured.value);done.delete(id);measured.value=done;persist()}
 function fillForm(){const i=current.value;if(!i)return;form.value={width:cm(i.width),depth:cm(i.depth),height:cm(i.height)};error.value='';notice.value=''}
 function chooseRoom(){itemIndex.value=0;roundFinished.value=false;fillForm()}
 function next(){
@@ -75,10 +77,10 @@ function previous(){
  const roomIndex=rooms.value.findIndex(r=>r.key===roomKey.value);
  if(roomIndex>0){const previousRoom=rooms.value[roomIndex-1]!;roomKey.value=previousRoom.key;itemIndex.value=Math.max(0,previousRoom.items.length-1)}
 }
-function skip(){if(!current.value)return;setSkipped(reference(current.value));notice.value='Overgeslagen.';next()}
+function skip(){if(!current.value)return;setSkipped(reference(current.value));next()}
 function firstUnprocessed(){
  for(const candidateRoom of rooms.value){const index=candidateRoom.items.findIndex(i=>!processed.value.has(reference(i)));if(index>=0){roomKey.value=candidateRoom.key;itemIndex.value=index;roundFinished.value=false;return}}
- if(rooms.value.length){roomKey.value=rooms.value[0]!.key;itemIndex.value=0}
+ if(rooms.value.length){roomKey.value=rooms.value[rooms.value.length-1]!.key;itemIndex.value=Math.max(0,rooms.value[rooms.value.length-1]!.items.length-1);roundFinished.value=true}
 }
 async function saveAndNext(){
  const item=current.value,state=furnitureState.value;if(!item||!state||saving.value)return;
@@ -89,7 +91,7 @@ async function saveAndNext(){
   const response=await fetch('/dashboard/furniture',{method:'PUT',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf()},body:JSON.stringify({revision:state.revision,items:[{floor:item.floor,id:item.id,width:values.width,depth:values.depth,height:values.height,base_z:Number(cm(item.base_z))}]}),signal:AbortSignal.timeout(20000)});
   const data=await response.json();
   if(!response.ok)throw new Error(response.status===409?'De meubelgegevens zijn ondertussen gewijzigd. Herlaad de meetmodus en probeer opnieuw.':data.errors?Object.values(data.errors).flat().join(' '):data.message??'Opslaan mislukt.');
-  furnitureState.value=data as FurnitureState;setMeasured(reference(item));notice.value=`${reference(item)} opgeslagen.`;next();
+  furnitureState.value=data as FurnitureState;setMeasured(reference(item));next();
  }catch(e){error.value=e instanceof Error?e.message:'Opslaan mislukt. Controleer de verbinding.'}finally{saving.value=false}
 }
 async function build(){
@@ -123,9 +125,11 @@ onMounted(async()=>{loadProgress();try{await refreshFurniture();const requested=
   <section v-if="loading" class="measure-card measure-loading">Meubels laden…</section>
   <section v-else-if="roundFinished" class="measure-card measure-finished">
    <span class="measure-finished-icon"><Check :size="28"/></span>
-   <h2>Meetronde afgerond</h2>
-   <p>{{measuredCount}} meubels gemeten<span v-if="skippedCount"> en {{skippedCount}} overgeslagen</span>. Je maten zijn al opgeslagen.</p>
-   <button v-if="modelOutdated" class="measure-primary" :disabled="buildBusy" @click="build"><WandSparkles :size="19"/>{{buildBusy?'Plattegrond wordt opgebouwd…':'Plattegrond bijwerken'}}</button>
+   <h2>{{remainingCount ? 'Nog niet helemaal klaar' : 'Meetronde afgerond'}}</h2>
+   <p v-if="remainingCount">{{remainingCount}} meubels zijn nog niet gemeten of overgeslagen. Je opgeslagen maten zijn al bewaard.</p>
+   <p v-else>{{measuredCount}} meubels gemeten<span v-if="skippedCount"> en {{skippedCount}} overgeslagen</span>. Je maten zijn al opgeslagen.</p>
+   <button v-if="remainingCount" class="measure-primary" @click="firstUnprocessed"><Ruler :size="19"/>Ga naar eerste open meubel</button>
+   <button v-else-if="modelOutdated" class="measure-primary" :disabled="buildBusy" @click="build"><WandSparkles :size="19"/>{{buildBusy?'Plattegrond wordt opgebouwd…':'Plattegrond bijwerken'}}</button>
    <p v-else>De 3D-plattegrond is al bijgewerkt met de huidige revisie.</p>
    <button class="measure-secondary" @click="previous"><ChevronLeft :size="18"/>Laatste meubel bekijken</button>
   </section>
