@@ -59,8 +59,8 @@ class FurnitureLayout
             ['id' => '269', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4', 'x' => -2.605, 'y' => .5633, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50, 'rotation' => 0, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true],
             ['id' => '270', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4', 'x' => -3.335, 'y' => .5633, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50, 'base_z' => 0.75, 'rotation' => 0, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true],
             ['id' => '271', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4', 'x' => -2.605, 'y' => .5633, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50, 'base_z' => 0.75, 'rotation' => 0, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true],
-            ['id' => 'bijspringer-skadis-1', 'floor' => 'upper', 'kind' => 'SKADIS met filament', 'model_kind' => 'skadis_filament', 'x' => -1.918, 'y' => .2933, 'width' => 0.55, 'depth' => 0.03, 'height' => 0.55, 'base_z' => 0.95, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
-            ['id' => 'bijspringer-skadis-2', 'floor' => 'upper', 'kind' => 'SKADIS met filament', 'model_kind' => 'skadis_filament', 'x' => -1.918, 'y' => .2933, 'width' => 0.55, 'depth' => 0.03, 'height' => 0.55, 'base_z' => 1.50, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => 'bijspringer-skadis-1', 'floor' => 'upper', 'kind' => 'SKADIS met filament', 'model_kind' => 'skadis_filament', 'x' => -1.918, 'y' => .2933, 'width' => 0.55, 'depth' => 0.03, 'height' => 0.55, 'base_z' => 0.45, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => 'bijspringer-skadis-2', 'floor' => 'upper', 'kind' => 'SKADIS met filament', 'model_kind' => 'skadis_filament', 'x' => -1.918, 'y' => .2933, 'width' => 0.55, 'depth' => 0.03, 'height' => 0.55, 'base_z' => 1.00, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
         ]);
 
         // Attic additions are real furniture items as well, so they are visible
@@ -245,19 +245,19 @@ class FurnitureLayout
 
         // Both SKADIS boards move 20 cm toward the outside wall (away from the
         // door) and remain vertically one below the other on the Levi wall.
+        // Their mounting heights come from the baseline/DB override and are not
+        // overwritten here, so the furniture editor can persist base_z changes.
         $skadis1 = $find('bijspringer-skadis-1', 'upper');
         $skadis2 = $find('bijspringer-skadis-2', 'upper');
         if ($skadis1 !== false) {
             $items[$skadis1]['rotation'] = 0;
             $items[$skadis1]['x'] = $officeRight - .10 - .20 - ($items[$skadis1]['width'] / 2);
             $items[$skadis1]['y'] = $officeBottom + ($items[$skadis1]['depth'] / 2);
-            $items[$skadis1]['base_z'] = .95;
         }
         if ($skadis2 !== false) {
             $items[$skadis2]['rotation'] = 0;
             $items[$skadis2]['x'] = $skadis1 !== false ? $items[$skadis1]['x'] : $officeRight - .10 - .20 - ($items[$skadis2]['width'] / 2);
             $items[$skadis2]['y'] = $officeBottom + ($items[$skadis2]['depth'] / 2);
-            $items[$skadis2]['base_z'] = $skadis1 !== false ? $items[$skadis1]['base_z'] + $items[$skadis1]['height'] : 1.50;
         }
 
         // Final attic clear-wall coordinates.
