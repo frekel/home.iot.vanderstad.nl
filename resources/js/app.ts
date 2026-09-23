@@ -73,11 +73,12 @@ if (attic) {
         [1.1, -2.75, 1.1, 0.90],
         [1.1, 1.80, 1.1, 2.75],
 
-        // 20 cm wall between Lily and Kledingkast/Zolder. Two 80 cm doors.
+        // 20 cm wall between Lily and Kledingkast/Zolder. The Lily-to-Zolder
+        // door starts 10 cm from the Kledingkast/Zolder partition and is 80 cm wide.
         [-3.4, 0.65, -2.85, 0.65],
         [-2.05, 0.65, -1.5, 0.65],
-        [-1.3, 0.65, -0.4, 0.65],
-        [0.4, 0.65, 1.0, 0.65],
+        [-1.3, 0.65, -1.2, 0.65],
+        [-0.4, 0.65, 1.0, 0.65],
 
         // 20 cm wall between Kledingkast and Zolder.
         [-1.4, 0.75, -1.4, 2.75],
