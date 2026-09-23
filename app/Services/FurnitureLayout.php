@@ -50,6 +50,15 @@ class FurnitureLayout
             ['id' => 'bijspringer-skadis-2', 'floor' => 'upper', 'kind' => 'SKADIS met filament', 'model_kind' => 'skadis_filament', 'x' => -3.985, 'y' => 0.57, 'width' => 0.55, 'depth' => 0.03, 'height' => 0.55, 'base_z' => 1.50, 'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true],
         ]);
 
+        // Attic additions are real furniture items as well, so they are visible
+        // in the measurement/editor UI instead of existing only in Blender.
+        $items = array_merge($items, [
+            ['id' => 'laundry-basket', 'floor' => 'attic', 'kind' => 'Wasmand', 'model_kind' => 'laundry_basket', 'x' => -1.65, 'y' => .90, 'width' => .30, 'depth' => .30, 'height' => .80, 'rotation' => 0, 'source_shape' => 'user_specified', 'measured' => true],
+            ['id' => 'washok-rack-right', 'floor' => 'attic', 'kind' => 'Stellingkast washok rechts', 'model_kind' => 'storage_rack', 'x' => 3.10, 'y' => -.915, 'width' => 3.67, 'depth' => .60, 'height' => 1.80, 'rotation' => 90, 'source_shape' => 'user_specified', 'measured' => true],
+            ['id' => 'washok-rack-bottom', 'floor' => 'attic', 'kind' => 'Stellingkast washok onder', 'model_kind' => 'storage_rack', 'x' => 2.30, 'y' => -2.45, 'width' => 1.00, 'depth' => .60, 'height' => 1.80, 'rotation' => 0, 'source_shape' => 'user_specified', 'measured' => true],
+            ['id' => 'washok-rack-left', 'floor' => 'attic', 'kind' => 'Stellingkast washok links', 'model_kind' => 'storage_rack', 'x' => 1.50, 'y' => -.975, 'width' => 3.55, 'depth' => .60, 'height' => 1.80, 'rotation' => 90, 'source_shape' => 'user_specified', 'measured' => true],
+        ]);
+
         foreach ($items as &$item) {
             if ($item['floor'] === 'attic' && in_array((string) $item['id'], ['191', '261', '201'], true)) {
                 unset($item['group'], $item['group_name']);
@@ -66,8 +75,7 @@ class FurnitureLayout
     public function items(array $overrides, bool $render = false): array
     {
         // Saved measurements from the site are applied first. Everything below
-        // only changes placement/rotation, so a freshly measured cabinet keeps
-        // its exact dimensions when the floorplan is rebuilt.
+        // only changes placement/rotation, so freshly measured dimensions remain authoritative.
         $items = array_map(function ($item) use ($overrides, $render) {
             $dimensions = array_intersect_key($item, array_flip(['width', 'depth', 'height']));
             $item = array_replace($item, $overrides[$item['floor'].':'.$item['id']] ?? []);
@@ -112,10 +120,7 @@ class FurnitureLayout
             }
         }
 
-        // Final attic clear-wall coordinates:
-        // x -3.40 = left knee wall, x 1.00 = Lily/Zolder side of Washok wall,
-        // x 1.20..3.40 = Washok, y .55/.75 = the 20 cm Lily partition,
-        // x -1.50/-1.30 = the 20 cm closet/Zolder partition.
+        // Final attic clear-wall coordinates.
         $leftKnee = -3.40;
         $roomRight = 1.00;
         $washokLeft = 1.20;
@@ -126,9 +131,6 @@ class FurnitureLayout
         $top = 2.75;
         $closetRight = -1.50;
 
-        // Lily: bed in the lower-right corner, with Z-261 directly against the
-        // foot. Z-201 stays aligned with the cabinet but all three remain
-        // independent items (their old group is removed in baseline()).
         $lilyBedIndex = $find('191', 'attic');
         if ($lilyBedIndex !== false) {
             $items[$lilyBedIndex]['rotation'] = 90;
@@ -139,14 +141,16 @@ class FurnitureLayout
             $cabinetIndex = $find('261', 'attic');
             if ($cabinetIndex !== false) {
                 $items[$cabinetIndex]['rotation'] = 90;
-                $items[$cabinetIndex]['x'] = $bedFootX - ($items[$cabinetIndex]['depth'] / 2);
+                // 5 cm to the visual right, while keeping the original rotation.
+                $items[$cabinetIndex]['x'] = $bedFootX - ($items[$cabinetIndex]['depth'] / 2) - .05;
                 $items[$cabinetIndex]['y'] = $items[$lilyBedIndex]['y'];
             }
 
             $screenIndex = $find('201', 'attic');
             if ($screenIndex !== false) {
                 $items[$screenIndex]['rotation'] = 270;
-                $items[$screenIndex]['x'] = $bedFootX - ($items[$screenIndex]['depth'] / 2) - .005;
+                // 50 cm to the visual right. On this mirrored plan that is negative X.
+                $items[$screenIndex]['x'] = $bedFootX - ($items[$screenIndex]['depth'] / 2) - .505;
                 $items[$screenIndex]['y'] = $items[$lilyBedIndex]['y'];
                 if ($cabinetIndex !== false) {
                     $items[$screenIndex]['base_z'] = $items[$cabinetIndex]['height'] + .05;
@@ -167,18 +171,20 @@ class FurnitureLayout
             $items[$armchair]['y'] = $lilyBottom + ($items[$armchair]['width'] / 2);
         }
 
+        // Z-260 belongs in the upper-left corner of Lily: against both walls.
         $sideTable = $find('260', 'attic');
         if ($sideTable !== false) {
             $items[$sideTable]['rotation'] = 270;
             $items[$sideTable]['x'] = $leftKnee + ($items[$sideTable]['depth'] / 2);
-            $items[$sideTable]['y'] = min($lilyTop - ($items[$sideTable]['width'] / 2), max($lilyBottom + ($items[$sideTable]['width'] / 2), $items[$sideTable]['y']));
+            $items[$sideTable]['y'] = $lilyTop - ($items[$sideTable]['width'] / 2);
         }
 
+        // Z-263 belongs in the upper-right corner of Lily: against both walls.
         $desk = $find('263', 'attic');
         if ($desk !== false) {
             $items[$desk]['rotation'] = 270;
             $items[$desk]['x'] = $roomRight - ($items[$desk]['depth'] / 2);
-            $items[$desk]['y'] = min($lilyTop - ($items[$desk]['width'] / 2), max($lilyBottom + ($items[$desk]['width'] / 2), $items[$desk]['y']));
+            $items[$desk]['y'] = $lilyTop - ($items[$desk]['width'] / 2);
 
             $computer = $find('264', 'attic');
             if ($computer !== false) {
@@ -201,12 +207,12 @@ class FurnitureLayout
             $items[$infrared]['y'] = min($lilyTop - ($items[$infrared]['width'] / 2), max($lilyBottom + ($items[$infrared]['width'] / 2), $items[$infrared]['y']));
         }
 
-        // Kledingkast room (1.90 x 2.00 m). Dimensions are never altered here;
-        // a saved measurement from the site remains authoritative.
+        // Z-269 keeps its original 180-degree rotation. Only move it against
+        // the schot/right wall; do not rotate it as part of the placement.
         $zolderTable = $find('269', 'attic');
         if ($zolderTable !== false) {
             $items[$zolderTable]['rotation'] = 180;
-            $items[$zolderTable]['x'] = ($leftKnee + $closetRight) / 2;
+            $items[$zolderTable]['x'] = $leftKnee + ($items[$zolderTable]['width'] / 2);
             $items[$zolderTable]['y'] = $top - ($items[$zolderTable]['depth'] / 2);
 
             $zolderChair = $find('268', 'attic');
@@ -231,9 +237,16 @@ class FurnitureLayout
             $items[$wardrobe]['y'] = $top - ($items[$wardrobe]['width'] / 2);
         }
 
-        // Zolder/trap room is 2.30 x 2.00 m. The old stair placeholder was
-        // wider than the measured room; only use the room width as a fallback
-        // when the stair itself has never been measured on the site.
+        $laundryBasket = $find('laundry-basket', 'attic');
+        if ($laundryBasket !== false && $wardrobe !== false) {
+            $wardrobeBottom = $items[$wardrobe]['y'] - ($items[$wardrobe]['width'] / 2);
+            $items[$laundryBasket]['x'] = $closetRight - ($items[$laundryBasket]['depth'] / 2);
+            $items[$laundryBasket]['y'] = max(
+                $upperBottom + ($items[$laundryBasket]['width'] / 2),
+                $wardrobeBottom - ($items[$laundryBasket]['width'] / 2),
+            );
+        }
+
         $stairs = $find('904', 'attic');
         if ($stairs !== false) {
             if (! isset($overrides['attic:904']['width'])) {
@@ -244,8 +257,7 @@ class FurnitureLayout
             $items[$stairs]['y'] = $top - ($items[$stairs]['depth'] / 2);
         }
 
-        // Washok is 5.50 x 2.20 m between x=1.20 and x=3.40. Keep all
-        // appliances against actual room walls and use their saved dimensions.
+        // Washok appliances against the right/top walls.
         $washer1 = $find('272', 'attic');
         if ($washer1 !== false) {
             $items[$washer1]['rotation'] = 90;
@@ -259,6 +271,49 @@ class FurnitureLayout
             $items[$washer2]['y'] = $washer1 !== false
                 ? $items[$washer1]['y'] - ($items[$washer1]['width'] / 2) - ($items[$washer2]['width'] / 2)
                 : 1.45;
+        }
+
+        // Editable washok racks. They form one run: 10 cm after Z-273, around
+        // the bottom corners, and end 10 cm before the doorway at y=.90.
+        $bottom = -2.75;
+        $doorStop = .80;
+        $rackStartY = $washer2 !== false
+            ? $items[$washer2]['y'] - ($items[$washer2]['width'] / 2) - .10
+            : .80;
+
+        $rackRight = $find('washok-rack-right', 'attic');
+        $rackBottom = $find('washok-rack-bottom', 'attic');
+        $rackLeft = $find('washok-rack-left', 'attic');
+
+        if ($rackRight !== false) {
+            if (! isset($overrides['attic:washok-rack-right']['width'])) {
+                $items[$rackRight]['width'] = max(.20, $rackStartY - $bottom);
+            }
+            $items[$rackRight]['rotation'] = 90;
+            $items[$rackRight]['x'] = $washokRight - ($items[$rackRight]['depth'] / 2);
+            $items[$rackRight]['y'] = $bottom + ($items[$rackRight]['width'] / 2);
+        }
+
+        if ($rackLeft !== false) {
+            if (! isset($overrides['attic:washok-rack-left']['width'])) {
+                $items[$rackLeft]['width'] = max(.20, $doorStop - $bottom);
+            }
+            $items[$rackLeft]['rotation'] = 90;
+            $items[$rackLeft]['x'] = $washokLeft + ($items[$rackLeft]['depth'] / 2);
+            $items[$rackLeft]['y'] = $bottom + ($items[$rackLeft]['width'] / 2);
+        }
+
+        if ($rackBottom !== false) {
+            $leftDepth = $rackLeft !== false ? $items[$rackLeft]['depth'] : .60;
+            $rightDepth = $rackRight !== false ? $items[$rackRight]['depth'] : .60;
+            $innerLeft = $washokLeft + $leftDepth;
+            $innerRight = $washokRight - $rightDepth;
+            if (! isset($overrides['attic:washok-rack-bottom']['width'])) {
+                $items[$rackBottom]['width'] = max(.20, $innerRight - $innerLeft);
+            }
+            $items[$rackBottom]['rotation'] = 0;
+            $items[$rackBottom]['x'] = ($innerLeft + $innerRight) / 2;
+            $items[$rackBottom]['y'] = $bottom + ($items[$rackBottom]['depth'] / 2);
         }
 
         $boiler = $find('906', 'attic');
