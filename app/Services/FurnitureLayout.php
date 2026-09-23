@@ -12,90 +12,101 @@ class FurnitureLayout
     {
         $items = json_decode(file_get_contents(base_path('assets/blender/furniture.json')), true, flags: JSON_THROW_ON_ERROR)['items'];
 
-        // User-measured first-floor furniture opposite the stairs, centred on
-        // the 63 cm wall between the two bedroom doors.
+        // Small cabinet + TV in Levi's room. Their exact position is derived
+        // from the final measured bed dimensions in items(), so they remain
+        // against the foot of the bed when dimensions change.
         $items[] = [
             'id' => '257', 'floor' => 'upper', 'kind' => 'cabinet',
-            'x' => -0.0349, 'y' => 0.4492,
+            'x' => 3.08, 'y' => -0.33,
             'width' => 0.71, 'depth' => 0.34, 'height' => 0.87,
             'rotation' => 0, 'source_shape' => 'dresser', 'measured' => true,
         ];
         $items[] = [
             'id' => '258', 'floor' => 'upper', 'kind' => 'tv',
-            'x' => -0.0349, 'y' => 0.3292,
+            'x' => 3.08, 'y' => -0.33,
             'width' => 0.62, 'depth' => 0.10, 'height' => 0.40,
-            'rotation' => 0, 'source_shape' => 'flat_tv',
+            'rotation' => 180, 'source_shape' => 'flat_tv',
             'base_z' => 0.87, 'standing' => true, 'measured' => true,
         ];
 
-        // Bijspringer (upper-floor office). Entering from the landing, the
-        // hanging desk and wardrobe are on the left/south wall. The stacked
-        // MICKE units are centred against the opposite/window wall.
+        // Bijspringer (upper-floor office). The desk wall is mirrored from the
+        // first draft. The MICKE/printer stack is placed flush against the
+        // outside/window wall, with two SKADIS filament boards beside it.
         $items = array_merge($items, [
             [
                 'id' => '259', 'floor' => 'upper', 'kind' => 'Hangend bureaublad', 'model_kind' => 'hanging_desk',
-                'x' => -1.95, 'y' => 0.6292, 'width' => 1.20, 'depth' => 0.80, 'height' => 0.04,
-                'base_z' => 0.96, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true,
+                'x' => -2.00, 'y' => 2.35, 'width' => 1.20, 'depth' => 0.80, 'height' => 0.04,
+                'base_z' => 0.96, 'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true,
             ],
             [
                 'id' => '260', 'floor' => 'upper', 'kind' => 'Monitor', 'model_kind' => 'monitor',
-                'x' => -2.22, 'y' => 0.37, 'width' => 0.54, 'depth' => 0.15, 'height' => 0.25,
+                'x' => -2.27, 'y' => 2.67, 'width' => 0.54, 'depth' => 0.15, 'height' => 0.25,
                 'base_z' => 1.00, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true,
             ],
             [
                 'id' => '261', 'floor' => 'upper', 'kind' => 'Monitor', 'model_kind' => 'monitor',
-                'x' => -1.68, 'y' => 0.37, 'width' => 0.54, 'depth' => 0.15, 'height' => 0.25,
+                'x' => -1.73, 'y' => 2.67, 'width' => 0.54, 'depth' => 0.15, 'height' => 0.25,
                 'base_z' => 1.00, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true,
             ],
             [
                 'id' => '262', 'floor' => 'upper', 'kind' => 'Laptop', 'model_kind' => 'laptop',
-                'x' => -1.95, 'y' => 0.77, 'width' => 0.36, 'depth' => 0.29, 'height' => 0.25,
-                'base_z' => 1.00, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true,
+                'x' => -2.00, 'y' => 2.20, 'width' => 0.36, 'depth' => 0.29, 'height' => 0.25,
+                'base_z' => 1.00, 'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true,
             ],
             [
                 'id' => '263', 'floor' => 'upper', 'kind' => 'Kledingkast', 'model_kind' => 'wardrobe_drawers',
-                'x' => -3.25, 'y' => 0.5442, 'width' => 1.40, 'depth' => 0.63, 'height' => 1.88,
-                'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true,
+                'x' => -3.30, 'y' => 2.435, 'width' => 1.40, 'depth' => 0.63, 'height' => 1.88,
+                'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true,
             ],
             [
                 'id' => '264', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk',
-                'x' => -3.0365, 'y' => 2.465, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75,
-                'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true,
+                'x' => -3.715, 'y' => 1.25, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75,
+                'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true,
             ],
             [
                 'id' => '265', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk',
-                'x' => -2.3065, 'y' => 2.465, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75,
-                'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true,
+                'x' => -3.715, 'y' => 1.98, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75,
+                'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true,
             ],
             [
                 'id' => '266', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk',
-                'x' => -3.0365, 'y' => 2.465, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75,
-                'base_z' => 0.75, 'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true,
+                'x' => -3.715, 'y' => 1.25, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75,
+                'base_z' => 0.75, 'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true,
             ],
             [
                 'id' => '267', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk',
-                'x' => -2.3065, 'y' => 2.465, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75,
-                'base_z' => 0.75, 'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true,
+                'x' => -3.715, 'y' => 1.98, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75,
+                'base_z' => 0.75, 'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true,
             ],
             [
                 'id' => '268', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4',
-                'x' => -3.0365, 'y' => 2.465, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50,
-                'rotation' => 180, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true,
+                'x' => -3.715, 'y' => 1.25, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50,
+                'rotation' => 270, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true,
             ],
             [
                 'id' => '269', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4',
-                'x' => -2.3065, 'y' => 2.465, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50,
-                'rotation' => 180, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true,
+                'x' => -3.715, 'y' => 1.98, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50,
+                'rotation' => 270, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true,
             ],
             [
                 'id' => '270', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4',
-                'x' => -3.0365, 'y' => 2.465, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50,
-                'base_z' => 0.75, 'rotation' => 180, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true,
+                'x' => -3.715, 'y' => 1.25, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50,
+                'base_z' => 0.75, 'rotation' => 270, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true,
             ],
             [
                 'id' => '271', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4',
-                'x' => -2.3065, 'y' => 2.465, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50,
-                'base_z' => 0.75, 'rotation' => 180, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true,
+                'x' => -3.715, 'y' => 1.98, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50,
+                'base_z' => 0.75, 'rotation' => 270, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true,
+            ],
+            [
+                'id' => 'bijspringer-skadis-1', 'floor' => 'upper', 'kind' => 'SKADIS met filament', 'model_kind' => 'skadis_filament',
+                'x' => -3.985, 'y' => 0.57, 'width' => 0.55, 'depth' => 0.03, 'height' => 0.55,
+                'base_z' => 0.95, 'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true,
+            ],
+            [
+                'id' => 'bijspringer-skadis-2', 'floor' => 'upper', 'kind' => 'SKADIS met filament', 'model_kind' => 'skadis_filament',
+                'x' => -3.985, 'y' => 0.57, 'width' => 0.55, 'depth' => 0.03, 'height' => 0.55,
+                'base_z' => 1.50, 'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true,
             ],
         ]);
 
@@ -110,7 +121,7 @@ class FurnitureLayout
 
     public function items(array $overrides, bool $render = false): array
     {
-        return array_map(function ($item) use ($overrides, $render) {
+        $items = array_map(function ($item) use ($overrides, $render) {
             $dimensions = array_intersect_key($item, array_flip(['width', 'depth', 'height']));
             $item = array_replace($item, $overrides[$item['floor'].':'.$item['id']] ?? []);
             if ($render) {
@@ -119,6 +130,33 @@ class FurnitureLayout
 
             return $item;
         }, $this->baseline());
+
+        // Levi's measured bed (V1-239) always sits in the outside bottom-right
+        // corner of the bedroom, flush with both walls. The small cabinet and
+        // TV are centred directly against the foot of the bed.
+        $bedIndex = array_search('239', array_column($items, 'id'), true);
+        if ($bedIndex !== false && $items[$bedIndex]['floor'] === 'upper') {
+            $bed = &$items[$bedIndex];
+            $bed['rotation'] = 0;
+            $bed['x'] = 4.0 - ($bed['width'] / 2);
+            $bed['y'] = -2.75 + ($bed['depth'] / 2);
+            $foot = $bed['y'] + ($bed['depth'] / 2);
+
+            foreach ($items as &$item) {
+                if ($item['floor'] !== 'upper' || ! in_array($item['id'], ['257', '258'], true)) {
+                    continue;
+                }
+                $item['x'] = $bed['x'];
+                $item['y'] = $foot + ($item['depth'] / 2);
+                if ($item['id'] === '258') {
+                    $item['rotation'] = 180;
+                    $item['base_z'] = $items[array_search('257', array_column($items, 'id'), true)]['height'] ?? .87;
+                }
+            }
+            unset($item, $bed);
+        }
+
+        return $items;
     }
 
     public function state(): array
