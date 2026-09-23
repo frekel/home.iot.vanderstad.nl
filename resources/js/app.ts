@@ -23,11 +23,18 @@ if (middleWall) {
 // Measured attic geometry. The laundry occupies the complete right side and
 // is exactly 5.50 x 2.20 m. The Homey "Zolder" storage room is the top-left
 // room and is exactly 2.30 x 2.00 m, kept anchored to the outside corner.
+// Lily's usable bedroom width is 4.40 m because a knee wall was installed
+// beneath the sloping roof. The roof shell itself remains at its full size.
 const attic = house.floors.find((floor) => floor.id === 'attic');
 if (attic) {
     const laundry = attic.rooms.find((room) => room.id === 'laundry');
     if (laundry) {
         laundry.polygon = [[1.8, -2.75], [4, -2.75], [4, 2.75], [1.8, 2.75]];
+    }
+
+    const bedroom = attic.rooms.find((room) => room.id === 'attic-bedroom');
+    if (bedroom) {
+        bedroom.polygon = [[-2.6, -2.75], [1.8, -2.75], [1.8, 0.1807], [-2.6, 0.1807]];
     }
 
     const storage = attic.rooms.find((room) => room.id === 'attic-closet');
@@ -41,6 +48,14 @@ if (attic) {
             wall[0] = 1.8;
             wall[2] = 1.8;
         }
+    }
+
+    // Add the knee wall that creates Lily's 4.40 m usable room width.
+    const lilyKneeWall = attic.walls.find((wall) =>
+        Math.abs(wall[0] + 2.6) < 0.0001 && Math.abs(wall[2] + 2.6) < 0.0001,
+    );
+    if (!lilyKneeWall) {
+        attic.walls.push([-2.6, -2.75, -2.6, 0.1807]);
     }
 
     // Rebuild the measured Zolder boundary while preserving the existing
