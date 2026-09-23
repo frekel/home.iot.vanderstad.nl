@@ -15,6 +15,28 @@ for wall in upper['walls']:
  if all(abs(a-b)<.0001 for a,b in zip(wall,[-.2326,.2292,.1628,.2292])):
   wall[:]=[-.3499,.2292,.2801,.2292]
   break
+
+# User-measured attic geometry. Laundry is exactly 5.50 x 2.20 m on the
+# complete right side. Homey room "Zolder" (attic-closet) is 2.30 x 2.00 m
+# in the outside top-left corner. Preserve the existing door openings.
+attic=next(f for f in data['floors'] if f['id']=='attic')
+laundry=next(r for r in attic['rooms'] if r['id']=='laundry')
+laundry['polygon']=[[1.8,-2.75],[4,-2.75],[4,2.75],[1.8,2.75]]
+storage=next(r for r in attic['rooms'] if r['id']=='attic-closet')
+storage['polygon']=[[-4,.75],[-1.7,.75],[-1.7,2.75],[-4,2.75]]
+for wall in attic['walls']:
+ if abs(wall[0]-1.8579)<1e-4 and abs(wall[2]-1.8579)<1e-4:
+  wall[0]=wall[2]=1.8
+for wall in attic['walls']:
+ if all(abs(a-b)<1e-4 for a,b in zip(wall,[-4,.2248,-2.8679,.2248])):
+  wall[:]=[-4,.75,-2.8679,.75]
+ elif all(abs(a-b)<1e-4 for a,b in zip(wall,[-1.872,.2248,-1.2002,.2248])):
+  wall[:]=[-1.872,.75,-1.7,.75]
+ elif abs(wall[0]+1.2942)<1e-4 and abs(wall[2]+1.2942)<1e-4:
+  wall[:]=[-1.7,.75,-1.7,2.75]
+ elif abs(wall[0]+.209)<1e-4 and abs(wall[1]-.2248)<1e-4 and abs(wall[2]-1.8579)<1e-4:
+  wall[2]=1.8
+
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.context.scene.unit_settings.system='METRIC'
 def mat(name,color):
