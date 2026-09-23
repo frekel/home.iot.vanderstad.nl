@@ -1,7 +1,7 @@
 """Custom furniture shapes for user-measured pieces that are not in the traced source."""
 import bpy, math
 
-CUSTOM_KINDS={'hanging_desk','monitor','laptop','wardrobe_drawers','micke_desk','kobra4'}
+CUSTOM_KINDS={'hanging_desk','monitor','laptop','wardrobe_drawers','micke_desk','kobra4','skadis_filament'}
 
 def build_custom_furniture(items, floor, materials):
     objects=[]
@@ -64,7 +64,6 @@ def build_custom_furniture(items, floor, materials):
             box('screen',(w-.035,.008,screen_h-.035),(0,-d*.126,base_h+screen_h/2),'screen',.002)
 
         elif k=='wardrobe_drawers':
-            panel=.025
             box('body',(w,d,h),(0,0,h/2),'oak',.008)
             front_y=d/2+.008
             left_w=w/2-.012
@@ -107,5 +106,21 @@ def build_custom_furniture(items, floor, materials):
             cylinder('toolhead_fan',min(w,h)*.045,.012,(0,gantry_y+.11,rail_z-.02),'metal',(math.pi/2,0,0))
             box('display',(w*.22,.035,h*.14),(w*.35,d*.30,base_h+.07),'dark',.006)
             box('display_glass',(w*.19,.008,h*.11),(w*.35,d*.322,base_h+.07),'screen',.003)
+
+        elif k=='skadis_filament':
+            # 55 x 55 cm SKADIS-style pegboard with six visible filament rolls.
+            box('pegboard',(w,d,h),(0,0,h/2),'linen',.006)
+            hole=.012
+            for row in range(7):
+                for col in range(7):
+                    x=-w*.39+col*(w*.78/6);z=h*.10+row*(h*.80/6)
+                    box('peg_hole', (hole,.006,hole), (x,d/2+.004,z), 'dark', .001)
+            roll_radius=min(w,h)*.115
+            roll_depth=.065
+            positions=[(-w*.24,h*.72),(0,h*.72),(w*.24,h*.72),(-w*.24,h*.35),(0,h*.35),(w*.24,h*.35)]
+            colours=['blue','linen','dark','fabric_light','blue','oak']
+            for n,((x,z),colour) in enumerate(zip(positions,colours),1):
+                cylinder('filament_'+str(n),roll_radius,roll_depth,(x,d/2+roll_depth/2+.015,z),colour,(math.pi/2,0,0))
+                cylinder('spool_hub_'+str(n),roll_radius*.34,roll_depth+.008,(x,d/2+roll_depth/2+.019,z),'dark',(math.pi/2,0,0))
 
     return objects
