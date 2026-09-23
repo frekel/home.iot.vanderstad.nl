@@ -63,9 +63,10 @@ if (attic) {
         [-4, 2.75, 4, 2.75],
         [4, -2.75, 4, 2.75],
 
-        // Knee walls: 60 cm roof void outside each usable end.
-        [-3.4, -2.75, -3.4, 2.75],
-        [3.4, -2.75, 3.4, 2.75],
+        // Knee walls are centred 5 cm outside the usable area, so their inner
+        // faces are exactly at x=-3.40 and x=3.40.
+        [-3.45, -2.75, -3.45, 2.75],
+        [3.45, -2.75, 3.45, 2.75],
 
         // 20 cm wall between the 4.40 m room block and the Washok.
         // Keep a 90 cm doorway inside the Zolder section.
