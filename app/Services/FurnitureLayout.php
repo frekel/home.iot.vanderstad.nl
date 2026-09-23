@@ -33,88 +33,32 @@ class FurnitureLayout
         // first draft. The MICKE/printer stack is placed flush against the
         // outside/window wall, with two SKADIS filament boards beside it.
         $items = array_merge($items, [
-            [
-                'id' => '259', 'floor' => 'upper', 'kind' => 'Hangend bureaublad', 'model_kind' => 'hanging_desk',
-                'x' => -2.00, 'y' => 2.35, 'width' => 1.20, 'depth' => 0.80, 'height' => 0.04,
-                'base_z' => 0.96, 'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true,
-            ],
-            [
-                'id' => '260', 'floor' => 'upper', 'kind' => 'Monitor', 'model_kind' => 'monitor',
-                'x' => -2.27, 'y' => 2.67, 'width' => 0.54, 'depth' => 0.15, 'height' => 0.25,
-                'base_z' => 1.00, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true,
-            ],
-            [
-                'id' => '261', 'floor' => 'upper', 'kind' => 'Monitor', 'model_kind' => 'monitor',
-                'x' => -1.73, 'y' => 2.67, 'width' => 0.54, 'depth' => 0.15, 'height' => 0.25,
-                'base_z' => 1.00, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true,
-            ],
-            [
-                'id' => '262', 'floor' => 'upper', 'kind' => 'Laptop', 'model_kind' => 'laptop',
-                'x' => -2.00, 'y' => 2.20, 'width' => 0.36, 'depth' => 0.29, 'height' => 0.25,
-                'base_z' => 1.00, 'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true,
-            ],
-            [
-                'id' => '263', 'floor' => 'upper', 'kind' => 'Kledingkast', 'model_kind' => 'wardrobe_drawers',
-                'x' => -3.30, 'y' => 2.435, 'width' => 1.40, 'depth' => 0.63, 'height' => 1.88,
-                'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true,
-            ],
-            [
-                'id' => '264', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk',
-                'x' => -3.715, 'y' => 1.25, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75,
-                'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true,
-            ],
-            [
-                'id' => '265', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk',
-                'x' => -3.715, 'y' => 1.98, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75,
-                'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true,
-            ],
-            [
-                'id' => '266', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk',
-                'x' => -3.715, 'y' => 1.25, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75,
-                'base_z' => 0.75, 'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true,
-            ],
-            [
-                'id' => '267', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk',
-                'x' => -3.715, 'y' => 1.98, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75,
-                'base_z' => 0.75, 'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true,
-            ],
-            [
-                'id' => '268', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4',
-                'x' => -3.715, 'y' => 1.25, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50,
-                'rotation' => 270, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true,
-            ],
-            [
-                'id' => '269', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4',
-                'x' => -3.715, 'y' => 1.98, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50,
-                'rotation' => 270, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true,
-            ],
-            [
-                'id' => '270', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4',
-                'x' => -3.715, 'y' => 1.25, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50,
-                'base_z' => 0.75, 'rotation' => 270, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true,
-            ],
-            [
-                'id' => '271', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4',
-                'x' => -3.715, 'y' => 1.98, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50,
-                'base_z' => 0.75, 'rotation' => 270, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true,
-            ],
-            [
-                'id' => 'bijspringer-skadis-1', 'floor' => 'upper', 'kind' => 'SKADIS met filament', 'model_kind' => 'skadis_filament',
-                'x' => -3.985, 'y' => 0.57, 'width' => 0.55, 'depth' => 0.03, 'height' => 0.55,
-                'base_z' => 0.95, 'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true,
-            ],
-            [
-                'id' => 'bijspringer-skadis-2', 'floor' => 'upper', 'kind' => 'SKADIS met filament', 'model_kind' => 'skadis_filament',
-                'x' => -3.985, 'y' => 0.57, 'width' => 0.55, 'depth' => 0.03, 'height' => 0.55,
-                'base_z' => 1.50, 'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true,
-            ],
+            ['id' => '259', 'floor' => 'upper', 'kind' => 'Hangend bureaublad', 'model_kind' => 'hanging_desk', 'x' => -2.00, 'y' => 2.35, 'width' => 1.20, 'depth' => 0.80, 'height' => 0.04, 'base_z' => 0.96, 'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => '260', 'floor' => 'upper', 'kind' => 'Monitor', 'model_kind' => 'monitor', 'x' => -2.27, 'y' => 2.67, 'width' => 0.54, 'depth' => 0.15, 'height' => 0.25, 'base_z' => 1.00, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => '261', 'floor' => 'upper', 'kind' => 'Monitor', 'model_kind' => 'monitor', 'x' => -1.73, 'y' => 2.67, 'width' => 0.54, 'depth' => 0.15, 'height' => 0.25, 'base_z' => 1.00, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => '262', 'floor' => 'upper', 'kind' => 'Laptop', 'model_kind' => 'laptop', 'x' => -2.00, 'y' => 2.20, 'width' => 0.36, 'depth' => 0.29, 'height' => 0.25, 'base_z' => 1.00, 'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => '263', 'floor' => 'upper', 'kind' => 'Kledingkast', 'model_kind' => 'wardrobe_drawers', 'x' => -3.30, 'y' => 2.435, 'width' => 1.40, 'depth' => 0.63, 'height' => 1.88, 'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => '264', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk', 'x' => -3.715, 'y' => 1.25, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75, 'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => '265', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk', 'x' => -3.715, 'y' => 1.98, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75, 'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => '266', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk', 'x' => -3.715, 'y' => 1.25, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75, 'base_z' => 0.75, 'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => '267', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk', 'x' => -3.715, 'y' => 1.98, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75, 'base_z' => 0.75, 'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => '268', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4', 'x' => -3.715, 'y' => 1.25, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50, 'rotation' => 270, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true],
+            ['id' => '269', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4', 'x' => -3.715, 'y' => 1.98, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50, 'rotation' => 270, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true],
+            ['id' => '270', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4', 'x' => -3.715, 'y' => 1.25, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50, 'base_z' => 0.75, 'rotation' => 270, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true],
+            ['id' => '271', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4', 'x' => -3.715, 'y' => 1.98, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50, 'base_z' => 0.75, 'rotation' => 270, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true],
+            ['id' => 'bijspringer-skadis-1', 'floor' => 'upper', 'kind' => 'SKADIS met filament', 'model_kind' => 'skadis_filament', 'x' => -3.985, 'y' => 0.57, 'width' => 0.55, 'depth' => 0.03, 'height' => 0.55, 'base_z' => 0.95, 'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => 'bijspringer-skadis-2', 'floor' => 'upper', 'kind' => 'SKADIS met filament', 'model_kind' => 'skadis_filament', 'x' => -3.985, 'y' => 0.57, 'width' => 0.55, 'depth' => 0.03, 'height' => 0.55, 'base_z' => 1.50, 'rotation' => 270, 'source_shape' => 'user_measured', 'measured' => true],
         ]);
 
         foreach ($items as &$item) {
+            if ($item['floor'] === 'attic' && in_array((string) $item['id'], ['191', '261', '201'], true)) {
+                unset($item['group'], $item['group_name']);
+            }
             $item['base_z'] ??= match ($item['kind']) {
                 'tv' => .9, 'computer' => .78, default => 0
             };
         }
+        unset($item);
 
         return $items;
     }
@@ -131,63 +75,137 @@ class FurnitureLayout
             return $item;
         }, $this->baseline());
 
-        // Levi's measured bed (V1-239) always sits in the outside bottom-right
-        // corner of the bedroom, flush with both walls. The small cabinet and
-        // TV are centred directly against the foot of the bed.
-        $bedIndex = array_search('239', array_column($items, 'id'), true);
-        if ($bedIndex !== false && $items[$bedIndex]['floor'] === 'upper') {
-            $bed = &$items[$bedIndex];
-            $bed['rotation'] = 0;
-            $bed['x'] = 4.0 - ($bed['width'] / 2);
-            $bed['y'] = -2.75 + ($bed['depth'] / 2);
-            $foot = $bed['y'] + ($bed['depth'] / 2);
+        $find = static function (string $id, string $floor) use (&$items): int|false {
+            foreach ($items as $index => $item) {
+                if ((string) $item['id'] === $id && $item['floor'] === $floor) {
+                    return $index;
+                }
+            }
 
-            foreach ($items as &$item) {
-                if ($item['floor'] !== 'upper' || ! in_array($item['id'], ['257', '258'], true)) {
+            return false;
+        };
+
+        // Levi's measured bed always sits in the outside bottom-right corner.
+        $bedIndex = $find('239', 'upper');
+        if ($bedIndex !== false) {
+            $items[$bedIndex]['rotation'] = 0;
+            $items[$bedIndex]['x'] = 4.0 - ($items[$bedIndex]['width'] / 2);
+            $items[$bedIndex]['y'] = -2.75 + ($items[$bedIndex]['depth'] / 2);
+            $foot = $items[$bedIndex]['y'] + ($items[$bedIndex]['depth'] / 2);
+
+            foreach (['257', '258'] as $id) {
+                $index = $find($id, 'upper');
+                if ($index === false) {
                     continue;
                 }
-                $item['x'] = $bed['x'];
-                $item['y'] = $foot + ($item['depth'] / 2);
-                if ($item['id'] === '258') {
-                    $item['rotation'] = 180;
-                    $item['base_z'] = $items[array_search('257', array_column($items, 'id'), true)]['height'] ?? .87;
-                }
+                $items[$index]['x'] = $items[$bedIndex]['x'];
+                $items[$index]['y'] = $foot + ($items[$index]['depth'] / 2);
             }
-            unset($item, $bed);
+            $tvIndex = $find('258', 'upper');
+            $cabinetIndex = $find('257', 'upper');
+            if ($tvIndex !== false) {
+                $items[$tvIndex]['rotation'] = 180;
+                $items[$tvIndex]['base_z'] = $cabinetIndex !== false ? $items[$cabinetIndex]['height'] : .87;
+            }
         }
 
-        // Lily's bed (Z-191) is rotated 90 degrees and sits exactly in the
-        // lower-right corner of her attic bedroom: headboard against the
-        // laundry partition and one side against the outside wall. Cabinet
-        // Z-261 sits directly against the foot of the bed. The projector
-        // screen Z-201 follows the cabinet and faces back towards the bed.
-        $lilyBedIndex = array_search('191', array_column($items, 'id'), true);
-        if ($lilyBedIndex !== false && $items[$lilyBedIndex]['floor'] === 'attic') {
-            $lilyBed = &$items[$lilyBedIndex];
-            $lilyBed['rotation'] = 90;
-            $lilyBed['x'] = 1.8 - ($lilyBed['depth'] / 2);
-            $lilyBed['y'] = -2.75 + ($lilyBed['width'] / 2);
-            $bedFootX = $lilyBed['x'] - ($lilyBed['depth'] / 2);
+        // Lily's bed Z-191 is rotated 90 degrees and sits exactly in the
+        // lower-right corner of her attic bedroom. Z-261 is against the foot;
+        // Z-201 follows the cabinet but is no longer grouped with either item.
+        $lilyBedIndex = $find('191', 'attic');
+        if ($lilyBedIndex !== false) {
+            $items[$lilyBedIndex]['rotation'] = 90;
+            $items[$lilyBedIndex]['x'] = 1.8 - ($items[$lilyBedIndex]['depth'] / 2);
+            $items[$lilyBedIndex]['y'] = -2.75 + ($items[$lilyBedIndex]['width'] / 2);
+            $bedFootX = $items[$lilyBedIndex]['x'] - ($items[$lilyBedIndex]['depth'] / 2);
 
-            $cabinetIndex = array_search('261', array_column($items, 'id'), true);
-            if ($cabinetIndex !== false && $items[$cabinetIndex]['floor'] === 'attic') {
-                $cabinet = &$items[$cabinetIndex];
-                $cabinet['rotation'] = 90;
-                $cabinet['x'] = $bedFootX - ($cabinet['depth'] / 2);
-                $cabinet['y'] = $lilyBed['y'];
-
-                $screenIndex = array_search('201', array_column($items, 'id'), true);
-                if ($screenIndex !== false && $items[$screenIndex]['floor'] === 'attic') {
-                    $screen = &$items[$screenIndex];
-                    $screen['rotation'] = 270;
-                    $screen['x'] = $bedFootX - ($screen['depth'] / 2) - .005;
-                    $screen['y'] = $lilyBed['y'];
-                    $screen['base_z'] = $cabinet['height'] + .05;
-                    unset($screen);
-                }
-                unset($cabinet);
+            $cabinetIndex = $find('261', 'attic');
+            if ($cabinetIndex !== false) {
+                $items[$cabinetIndex]['rotation'] = 90;
+                $items[$cabinetIndex]['x'] = $bedFootX - ($items[$cabinetIndex]['depth'] / 2);
+                $items[$cabinetIndex]['y'] = $items[$lilyBedIndex]['y'];
             }
-            unset($lilyBed);
+
+            $screenIndex = $find('201', 'attic');
+            if ($screenIndex !== false) {
+                $items[$screenIndex]['rotation'] = 270;
+                $items[$screenIndex]['x'] = $bedFootX - ($items[$screenIndex]['depth'] / 2) - .005;
+                $items[$screenIndex]['y'] = $items[$lilyBedIndex]['y'];
+                if ($cabinetIndex !== false) {
+                    $items[$screenIndex]['base_z'] = $items[$cabinetIndex]['height'] + .05;
+                }
+            }
+        }
+
+        // Snap the fixed attic furniture to the measured room walls. Chairs
+        // stay free so they remain usable at their desk/table positions.
+        $mirror = $find('193', 'attic');
+        if ($mirror !== false) {
+            $items[$mirror]['y'] = 0.1807 - ($items[$mirror]['depth'] / 2);
+        }
+
+        $sideTable = $find('260', 'attic');
+        if ($sideTable !== false) {
+            $items[$sideTable]['rotation'] = 270;
+            $items[$sideTable]['x'] = -4.0 + ($items[$sideTable]['depth'] / 2);
+        }
+
+        $desk = $find('263', 'attic');
+        if ($desk !== false) {
+            $items[$desk]['rotation'] = 270;
+            $items[$desk]['x'] = 1.8 - ($items[$desk]['depth'] / 2);
+            $computer = $find('264', 'attic');
+            if ($computer !== false) {
+                $items[$computer]['x'] = $items[$desk]['x'];
+                $items[$computer]['y'] = $items[$desk]['y'];
+            }
+        }
+
+        $zolderTable = $find('269', 'attic');
+        if ($zolderTable !== false) {
+            $items[$zolderTable]['y'] = 2.75 - ($items[$zolderTable]['depth'] / 2);
+        }
+
+        $basket = $find('271', 'attic');
+        if ($basket !== false) {
+            $items[$basket]['rotation'] = 270;
+            $items[$basket]['x'] = -4.0 + ($items[$basket]['depth'] / 2);
+            $items[$basket]['y'] = 0.75 + ($items[$basket]['width'] / 2);
+        }
+
+        $wardrobe = $find('903', 'attic');
+        if ($wardrobe !== false) {
+            $items[$wardrobe]['rotation'] = 90;
+            $items[$wardrobe]['x'] = -1.7 - ($items[$wardrobe]['depth'] / 2);
+            $items[$wardrobe]['y'] = 2.75 - ($items[$wardrobe]['width'] / 2);
+        }
+
+        $washer1 = $find('272', 'attic');
+        if ($washer1 !== false) {
+            $items[$washer1]['rotation'] = 90;
+            $items[$washer1]['x'] = 4.0 - ($items[$washer1]['depth'] / 2);
+            $items[$washer1]['y'] = 2.75 - ($items[$washer1]['width'] / 2);
+        }
+        $washer2 = $find('273', 'attic');
+        if ($washer2 !== false) {
+            $items[$washer2]['rotation'] = 90;
+            $items[$washer2]['x'] = 4.0 - ($items[$washer2]['depth'] / 2);
+            $items[$washer2]['y'] = $washer1 !== false
+                ? $items[$washer1]['y'] - $items[$washer1]['width']
+                : 1.45;
+        }
+
+        $boiler = $find('906', 'attic');
+        if ($boiler !== false) {
+            $items[$boiler]['x'] = 1.8 + ($items[$boiler]['width'] / 2);
+            $items[$boiler]['y'] = 2.75 - ($items[$boiler]['depth'] / 2);
+        }
+        $heating = $find('907', 'attic');
+        if ($heating !== false) {
+            $items[$heating]['y'] = 2.75 - ($items[$heating]['depth'] / 2);
+            $items[$heating]['x'] = $boiler !== false
+                ? $items[$boiler]['x'] + ($items[$boiler]['width'] / 2) + ($items[$heating]['width'] / 2)
+                : 2.48;
         }
 
         return $items;
