@@ -137,17 +137,24 @@ class FurnitureLayout
             }
         }
 
-        // Snap the fixed attic furniture to the measured room walls. Chairs
-        // stay free so they remain usable at their desk/table positions.
+        // Snap fixed attic furniture to the measured room walls. The new knee
+        // wall at x=-2.60 defines Lily's 4.40 m usable bedroom width.
         $mirror = $find('193', 'attic');
         if ($mirror !== false) {
             $items[$mirror]['y'] = 0.1807 - ($items[$mirror]['depth'] / 2);
         }
 
+        $armchair = $find('259', 'attic');
+        if ($armchair !== false) {
+            $items[$armchair]['rotation'] = 270;
+            $items[$armchair]['x'] = -2.6 + ($items[$armchair]['depth'] / 2);
+            $items[$armchair]['y'] = -2.75 + ($items[$armchair]['width'] / 2);
+        }
+
         $sideTable = $find('260', 'attic');
         if ($sideTable !== false) {
             $items[$sideTable]['rotation'] = 270;
-            $items[$sideTable]['x'] = -4.0 + ($items[$sideTable]['depth'] / 2);
+            $items[$sideTable]['x'] = -2.6 + ($items[$sideTable]['depth'] / 2);
         }
 
         $desk = $find('263', 'attic');
@@ -159,6 +166,12 @@ class FurnitureLayout
                 $items[$computer]['x'] = $items[$desk]['x'];
                 $items[$computer]['y'] = $items[$desk]['y'];
             }
+        }
+
+        $infrared = $find('905', 'attic');
+        if ($infrared !== false) {
+            $items[$infrared]['rotation'] = 270;
+            $items[$infrared]['x'] = -2.6 + ($items[$infrared]['depth'] / 2);
         }
 
         $zolderTable = $find('269', 'attic');
@@ -175,6 +188,12 @@ class FurnitureLayout
 
         $wardrobe = $find('903', 'attic');
         if ($wardrobe !== false) {
+            // The usable attic-bedroom width changed from 5.8062 m to 4.40 m.
+            // Shorten the wardrobe by the same 1.4062 m, but do not apply the
+            // correction twice if a future saved measurement is already short.
+            if ($items[$wardrobe]['width'] > 1.5) {
+                $items[$wardrobe]['width'] = max(.10, $items[$wardrobe]['width'] - 1.4062);
+            }
             $items[$wardrobe]['rotation'] = 90;
             $items[$wardrobe]['x'] = -1.7 - ($items[$wardrobe]['depth'] / 2);
             $items[$wardrobe]['y'] = 2.75 - ($items[$wardrobe]['width'] / 2);
