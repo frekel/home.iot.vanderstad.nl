@@ -6,6 +6,9 @@ import {furnitureState,refreshFurniture,type FurnitureItem,type FurnitureState} 
 
 type Dimension='width'|'depth'|'height';
 type RoomOption={key:string;id:string;floor:string;label:string;floorLabel:string;items:FurnitureItem[]};
+type Zone={name:string;parent:string|null};
+type Layout={floors:Record<string,string>;rooms:Record<string,string>;aliases?:Record<string,string>};
+type HomeStatus={zones?:Record<string,Zone>;layout?:Layout};
 
 const prefixes:Record<string,string>={ground:'BG',upper:'V1',attic:'Z'};
 const floorNames:Record<string,string>={ground:'Begane grond',upper:'Eerste verdieping',attic:'Zolder'};
@@ -18,23 +21,43 @@ const loading=ref(true),saving=ref(false),building=ref(false),error=ref(''),noti
 const roomKey=ref(''),itemIndex=ref(0),roundFinished=ref(false);
 const measured=ref<Set<string>>(new Set()),skipped=ref<Set<string>>(new Set());
 const form=ref<Record<Dimension,string>>({width:'',depth:'',height:''});
+const zoneNames=ref<Record<string,Zone>>({});
+const layout=ref<Layout>({floors:{},rooms:{},aliases:{}});
 
 function reference(i:FurnitureItem){return `${prefixes[i.floor]??i.floor}-${i.id==='levi-tv-cabinet'?'901':i.id==='levi-tv'?'902':i.id}`}
 function label(i:FurnitureItem){return i.id==='levi-tv-cabinet'?'Kast aan voeteneinde':i.id==='levi-tv'?'Tv aan muur':names[i.kind]??i.kind}
 function contains(p:number[][],x:number,y:number){let inside=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const a=p[i]!,b=p[j]!;if((a[1]!>y)!==(b[1]!>y)&&x<(b[0]!-a[0]!)*(y-a[1]!)/(b[1]!-a[1]!)+a[0]!)inside=!inside}return inside}
 function roomFor(i:FurnitureItem){return house.floors.find(f=>f.id===i.floor)?.rooms.find(r=>contains(r.polygon,i.x,i.y))}
+function canonicalRoom(id:string){return layout.value.aliases?.[id]??id}
+function roomLabel(id:string,fallback:string){const canonical=canonicalRoom(id);return zoneNames.value[layout.value.rooms[canonical]??'']?.name??fallback}
+function floorLabel(id:string,fallback:string){return zoneNames.value[layout.value.floors[id]??'']?.name??floorNames[id]??fallback}
 function cm(value:number){return String(Math.round(value*100000)/1000)}
 function csrf(){return document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content??''}
+async function refreshHomeyLabels(){
+ try{
+  const response=await fetch('/dashboard/status',{headers:{Accept:'application/json'},signal:AbortSignal.timeout(12000)});
+  const data=await response.json() as HomeStatus;
+  if(data.layout)layout.value=data.layout;
+  if(data.zones)zoneNames.value=data.zones;
+ }catch{/* Keep plan labels as fallback when Homey is unavailable. */}
+}
 
 const rooms=computed<RoomOption[]>(()=>{
  const items=furnitureState.value?.items??[];
- const result:RoomOption[]=[];
+ const grouped=new Map<string,RoomOption>();
  for(const floor of house.floors){
-  for(const room of floor.rooms){
-   const roomItems=items.filter(i=>i.floor===floor.id&&roomFor(i)?.id===room.id).sort((a,b)=>reference(a).localeCompare(reference(b),'nl'));
-   if(roomItems.length)result.push({key:`${floor.id}:${room.id}`,id:room.id,floor:floor.id,label:room.label,floorLabel:floorNames[floor.id]??floor.label,items:roomItems});
+  for(const planRoom of floor.rooms){
+   const roomItems=items.filter(i=>i.floor===floor.id&&roomFor(i)?.id===planRoom.id);
+   if(!roomItems.length)continue;
+   const canonical=canonicalRoom(planRoom.id);
+   const key=`${floor.id}:${canonical}`;
+   const existing=grouped.get(key);
+   if(existing){existing.items.push(...roomItems);continue}
+   grouped.set(key,{key,id:canonical,floor:floor.id,label:roomLabel(planRoom.id,planRoom.label),floorLabel:floorLabel(floor.id,floor.label),items:[...roomItems]});
   }
  }
+ const result=[...grouped.values()];
+ for(const room of result)room.items.sort((a,b)=>reference(a).localeCompare(reference(b),'nl'));
  const placed=new Set(result.flatMap(r=>r.items.map(reference)));
  const unknown=items.filter(i=>!placed.has(reference(i)));
  if(unknown.length)result.push({key:'unknown',id:'unknown',floor:'',label:'Plaatsing controleren',floorLabel:'Overig',items:unknown});
@@ -101,7 +124,7 @@ async function build(){
 
 watch(()=>current.value?reference(current.value):'',fillForm);
 watch(roomKey,()=>{itemIndex.value=Math.min(itemIndex.value,Math.max(0,roomItems.value.length-1))});
-onMounted(async()=>{loadProgress();try{await refreshFurniture();const requested=new URLSearchParams(location.search).get('room');const target=requested?rooms.value.find(r=>r.id===requested||r.key===requested):undefined;if(target){roomKey.value=target.key;itemIndex.value=0}else firstUnprocessed()}catch{error.value='De meubelgegevens konden niet worden geladen.'}finally{loading.value=false;fillForm()}});
+onMounted(async()=>{loadProgress();try{await Promise.all([refreshFurniture(),refreshHomeyLabels()]);const requested=new URLSearchParams(location.search).get('room');const target=requested?rooms.value.find(r=>r.id===canonicalRoom(requested)||r.key===requested):undefined;if(target){roomKey.value=target.key;itemIndex.value=0}else firstUnprocessed()}catch{error.value='De meubelgegevens konden niet worden geladen.'}finally{loading.value=false;fillForm()}});
 </script>
 
 <template>
