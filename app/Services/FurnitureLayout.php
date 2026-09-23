@@ -37,9 +37,9 @@ class FurnitureLayout
         $items[] = [
             'id' => '256-radiator', 'floor' => 'upper', 'kind' => 'Wandradiator',
             'model_kind' => 'wall_radiator',
-            'x' => 3.95, 'y' => 0.6533,
+            'x' => 1.9628, 'y' => 1.1687,
             'width' => 0.75, 'depth' => 0.10, 'height' => 0.60,
-            'base_z' => 0.15, 'rotation' => 270,
+            'base_z' => 0.15, 'rotation' => 90,
             'source_shape' => 'user_specified', 'measured' => true,
         ];
 
@@ -109,22 +109,18 @@ class FurnitureLayout
             return false;
         };
 
-        // V1-239 sits between V1-236 and V1-220. Its back edge aligns with the
-        // fronts of both cabinets instead of touching the outside wall.
+        // V1-239 stays between V1-236 and V1-220, with its headboard flush
+        // against the outside/headboard wall.
         $bedIndex = $find('239', 'upper');
         $leftBedCabinet = $find('236', 'upper');
         $rightBedCabinet = $find('220', 'upper');
         if ($bedIndex !== false) {
             $items[$bedIndex]['rotation'] = 0;
+            $items[$bedIndex]['y'] = -2.75 + ($items[$bedIndex]['depth'] / 2);
             if ($leftBedCabinet !== false && $rightBedCabinet !== false) {
                 $leftInner = $items[$leftBedCabinet]['x'] + ($items[$leftBedCabinet]['width'] / 2);
                 $rightInner = $items[$rightBedCabinet]['x'] - ($items[$rightBedCabinet]['width'] / 2);
                 $items[$bedIndex]['x'] = ($leftInner + $rightInner) / 2;
-                $cabinetFront = max(
-                    $items[$leftBedCabinet]['y'] + ($items[$leftBedCabinet]['depth'] / 2),
-                    $items[$rightBedCabinet]['y'] + ($items[$rightBedCabinet]['depth'] / 2),
-                );
-                $items[$bedIndex]['y'] = $cabinetFront + ($items[$bedIndex]['depth'] / 2);
             }
         }
 
@@ -185,16 +181,15 @@ class FurnitureLayout
             }
         }
 
-        // Badkamer: V1-256 remains against the lower wall but moves 20 cm left
-        // on the furniture map (positive world X on the mirrored upper floor).
-        // The mirror follows it. A 75 cm wall radiator is on the adjoining outer
-        // wall next to the sink because both do not fit side by side on one wall.
+        // Badkamer: V1-256 remains against the lower wall and is shifted 20 cm
+        // left on the furniture map. The mirror follows it. The 75 cm radiator
+        // is immediately beside V1-256 around the left-hand corner, not near V1-254.
         $bathSink = $find('256', 'upper');
         $bathMirror = $find('256-mirror', 'upper');
         $bathRadiator = $find('256-radiator', 'upper');
         if ($bathSink !== false) {
             $bathroomBottom = .2783;
-            $bathroomRight = 4.0;
+            $bathroomLeft = 1.9128;
             $items[$bathSink]['rotation'] = 180;
             $items[$bathSink]['x'] += .20;
             $items[$bathSink]['y'] = $bathroomBottom + ($items[$bathSink]['depth'] / 2);
@@ -208,9 +203,9 @@ class FurnitureLayout
             }
 
             if ($bathRadiator !== false) {
-                $items[$bathRadiator]['rotation'] = 270;
-                $items[$bathRadiator]['x'] = $bathroomRight - ($items[$bathRadiator]['depth'] / 2);
-                $items[$bathRadiator]['y'] = $bathroomBottom + ($items[$bathRadiator]['width'] / 2);
+                $items[$bathRadiator]['rotation'] = 90;
+                $items[$bathRadiator]['x'] = $bathroomLeft + ($items[$bathRadiator]['depth'] / 2);
+                $items[$bathRadiator]['y'] = $bathroomBottom + $items[$bathSink]['depth'] + .05 + ($items[$bathRadiator]['width'] / 2);
             }
         }
 
