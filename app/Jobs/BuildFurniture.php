@@ -35,7 +35,7 @@ class BuildFurniture implements ShouldQueue
         File::ensureDirectoryExists($directory);
         file_put_contents($directory.'/input.json', json_encode([
             'house' => $house->data(),
-            'items' => $layout->items(json_decode($row->overrides, true, flags: JSON_THROW_ON_ERROR), true),
+            'items' => $layout->items(render: true),
         ], JSON_THROW_ON_ERROR));
         $process = new Process([
             config('furniture.blender'), '--background', '--threads', '2', '--python-exit-code', '1', '--python', base_path('assets/blender/build_house.py'),
