@@ -156,6 +156,40 @@ class FurnitureLayout
             unset($item, $bed);
         }
 
+        // Lily's bed (Z-191) is rotated 90 degrees and sits exactly in the
+        // lower-right corner of her attic bedroom: headboard against the
+        // laundry partition and one side against the outside wall. Cabinet
+        // Z-261 sits directly against the foot of the bed. The projector
+        // screen Z-201 follows the cabinet and faces back towards the bed.
+        $lilyBedIndex = array_search('191', array_column($items, 'id'), true);
+        if ($lilyBedIndex !== false && $items[$lilyBedIndex]['floor'] === 'attic') {
+            $lilyBed = &$items[$lilyBedIndex];
+            $lilyBed['rotation'] = 90;
+            $lilyBed['x'] = 1.8 - ($lilyBed['depth'] / 2);
+            $lilyBed['y'] = -2.75 + ($lilyBed['width'] / 2);
+            $bedFootX = $lilyBed['x'] - ($lilyBed['depth'] / 2);
+
+            $cabinetIndex = array_search('261', array_column($items, 'id'), true);
+            if ($cabinetIndex !== false && $items[$cabinetIndex]['floor'] === 'attic') {
+                $cabinet = &$items[$cabinetIndex];
+                $cabinet['rotation'] = 90;
+                $cabinet['x'] = $bedFootX - ($cabinet['depth'] / 2);
+                $cabinet['y'] = $lilyBed['y'];
+
+                $screenIndex = array_search('201', array_column($items, 'id'), true);
+                if ($screenIndex !== false && $items[$screenIndex]['floor'] === 'attic') {
+                    $screen = &$items[$screenIndex];
+                    $screen['rotation'] = 270;
+                    $screen['x'] = $bedFootX - ($screen['depth'] / 2) - .005;
+                    $screen['y'] = $lilyBed['y'];
+                    $screen['base_z'] = $cabinet['height'] + .05;
+                    unset($screen);
+                }
+                unset($cabinet);
+            }
+            unset($lilyBed);
+        }
+
         return $items;
     }
 
