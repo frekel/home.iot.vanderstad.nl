@@ -28,6 +28,77 @@ class FurnitureLayout
             'base_z' => 0.87, 'standing' => true, 'measured' => true,
         ];
 
+        // Bijspringer (upper-floor office). Entering from the landing, the
+        // hanging desk and wardrobe are on the left/south wall. The stacked
+        // MICKE units are centred against the opposite/window wall.
+        $items = array_merge($items, [
+            [
+                'id' => '259', 'floor' => 'upper', 'kind' => 'Hangend bureaublad', 'model_kind' => 'hanging_desk',
+                'x' => -1.95, 'y' => 0.6292, 'width' => 1.20, 'depth' => 0.80, 'height' => 0.04,
+                'base_z' => 0.96, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true,
+            ],
+            [
+                'id' => '260', 'floor' => 'upper', 'kind' => 'Monitor', 'model_kind' => 'monitor',
+                'x' => -2.22, 'y' => 0.37, 'width' => 0.54, 'depth' => 0.15, 'height' => 0.25,
+                'base_z' => 1.00, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true,
+            ],
+            [
+                'id' => '261', 'floor' => 'upper', 'kind' => 'Monitor', 'model_kind' => 'monitor',
+                'x' => -1.68, 'y' => 0.37, 'width' => 0.54, 'depth' => 0.15, 'height' => 0.25,
+                'base_z' => 1.00, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true,
+            ],
+            [
+                'id' => '262', 'floor' => 'upper', 'kind' => 'Laptop', 'model_kind' => 'laptop',
+                'x' => -1.95, 'y' => 0.77, 'width' => 0.36, 'depth' => 0.29, 'height' => 0.25,
+                'base_z' => 1.00, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true,
+            ],
+            [
+                'id' => '263', 'floor' => 'upper', 'kind' => 'Kledingkast', 'model_kind' => 'wardrobe_drawers',
+                'x' => -3.25, 'y' => 0.5442, 'width' => 1.40, 'depth' => 0.63, 'height' => 1.88,
+                'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true,
+            ],
+            [
+                'id' => '264', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk',
+                'x' => -3.0365, 'y' => 2.465, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75,
+                'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true,
+            ],
+            [
+                'id' => '265', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk',
+                'x' => -2.3065, 'y' => 2.465, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75,
+                'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true,
+            ],
+            [
+                'id' => '266', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk',
+                'x' => -3.0365, 'y' => 2.465, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75,
+                'base_z' => 0.75, 'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true,
+            ],
+            [
+                'id' => '267', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk',
+                'x' => -2.3065, 'y' => 2.465, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75,
+                'base_z' => 0.75, 'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true,
+            ],
+            [
+                'id' => '268', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4',
+                'x' => -3.0365, 'y' => 2.465, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50,
+                'rotation' => 180, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true,
+            ],
+            [
+                'id' => '269', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4',
+                'x' => -2.3065, 'y' => 2.465, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50,
+                'rotation' => 180, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true,
+            ],
+            [
+                'id' => '270', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4',
+                'x' => -3.0365, 'y' => 2.465, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50,
+                'base_z' => 0.75, 'rotation' => 180, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true,
+            ],
+            [
+                'id' => '271', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4',
+                'x' => -2.3065, 'y' => 2.465, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50,
+                'base_z' => 0.75, 'rotation' => 180, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true,
+            ],
+        ]);
+
         foreach ($items as &$item) {
             $item['base_z'] ??= match ($item['kind']) {
                 'tv' => .9, 'computer' => .78, default => 0
