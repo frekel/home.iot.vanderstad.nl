@@ -12,21 +12,27 @@ class FurnitureLayout
     {
         $items = json_decode(file_get_contents(base_path('assets/blender/furniture.json')), true, flags: JSON_THROW_ON_ERROR)['items'];
 
-        // Small cabinet + TV in Levi's room. Their exact position is derived
-        // from the final measured bed dimensions in items(), so they remain
-        // against the foot of the bed when dimensions change.
+        // Cabinet + TV for the first-floor landing. Their exact placement
+        // against the bathroom wall is calculated after saved dimensions are applied.
         $items[] = [
             'id' => '257', 'floor' => 'upper', 'kind' => 'cabinet',
-            'x' => 3.08, 'y' => -0.33,
+            'x' => 1.69, 'y' => 1.68,
             'width' => 0.71, 'depth' => 0.34, 'height' => 0.87,
-            'rotation' => 0, 'source_shape' => 'dresser', 'measured' => true,
+            'rotation' => 90, 'source_shape' => 'dresser', 'measured' => true,
         ];
         $items[] = [
             'id' => '258', 'floor' => 'upper', 'kind' => 'tv',
-            'x' => 3.08, 'y' => -0.33,
+            'x' => 1.69, 'y' => 1.68,
             'width' => 0.62, 'depth' => 0.10, 'height' => 0.40,
-            'rotation' => 180, 'source_shape' => 'flat_tv',
+            'rotation' => 90, 'source_shape' => 'flat_tv',
             'base_z' => 0.87, 'standing' => true, 'measured' => true,
+        ];
+        $items[] = [
+            'id' => '256-mirror', 'floor' => 'upper', 'kind' => 'mirror',
+            'x' => 2.5297, 'y' => 0.2933,
+            'width' => 1.5135, 'depth' => 0.03, 'height' => 0.75,
+            'rotation' => 180, 'source_shape' => 'user_specified',
+            'base_z' => 0.67, 'measured' => true,
         ];
 
         // Bijspringer (upper-floor office). Exact placement against the Levi
@@ -95,27 +101,80 @@ class FurnitureLayout
             return false;
         };
 
-        // Levi's measured bed always sits in the outside bottom-right corner.
+        // Levi's measured bed stays in the outside bottom-right corner.
         $bedIndex = $find('239', 'upper');
         if ($bedIndex !== false) {
             $items[$bedIndex]['rotation'] = 0;
             $items[$bedIndex]['x'] = 4.0 - ($items[$bedIndex]['width'] / 2);
             $items[$bedIndex]['y'] = -2.75 + ($items[$bedIndex]['depth'] / 2);
-            $foot = $items[$bedIndex]['y'] + ($items[$bedIndex]['depth'] / 2);
+        }
 
-            foreach (['257', '258'] as $id) {
-                $index = $find($id, 'upper');
-                if ($index === false) {
-                    continue;
-                }
-                $items[$index]['x'] = $items[$bedIndex]['x'];
-                $items[$index]['y'] = $foot + ($items[$index]['depth'] / 2);
+        // Slaapkamer: V1-244 is flush against the partition wall toward Levi.
+        // V1-901 is the legacy levi-tv-cabinet display alias and sits 5 cm from
+        // the foot of the bed. V1-253 follows the cabinet and stands on top.
+        $sleepingBed = $find('244', 'upper');
+        $footCabinet = $find('levi-tv-cabinet', 'upper');
+        $footTv = $find('253', 'upper');
+        if ($sleepingBed !== false) {
+            $bedroomRight = -.1337;
+            $bedroomBottom = -2.75;
+            $bedroomTop = .1855;
+            $items[$sleepingBed]['rotation'] = 90;
+            $items[$sleepingBed]['x'] = $bedroomRight - ($items[$sleepingBed]['depth'] / 2);
+            $items[$sleepingBed]['y'] = min(
+                $bedroomTop - ($items[$sleepingBed]['width'] / 2),
+                max($bedroomBottom + ($items[$sleepingBed]['width'] / 2), $items[$sleepingBed]['y']),
+            );
+            $bedFootX = $items[$sleepingBed]['x'] - ($items[$sleepingBed]['depth'] / 2);
+
+            if ($footCabinet !== false) {
+                $items[$footCabinet]['rotation'] = 270;
+                $items[$footCabinet]['x'] = $bedFootX - .05 - ($items[$footCabinet]['depth'] / 2);
+                $items[$footCabinet]['y'] = $items[$sleepingBed]['y'];
             }
-            $tvIndex = $find('258', 'upper');
-            $cabinetIndex = $find('257', 'upper');
-            if ($tvIndex !== false) {
-                $items[$tvIndex]['rotation'] = 180;
-                $items[$tvIndex]['base_z'] = $cabinetIndex !== false ? $items[$cabinetIndex]['height'] : .87;
+            if ($footTv !== false && $footCabinet !== false) {
+                $items[$footTv]['rotation'] = 270;
+                $items[$footTv]['x'] = $items[$footCabinet]['x'];
+                $items[$footTv]['y'] = $items[$footCabinet]['y'];
+                $items[$footTv]['base_z'] = $items[$footCabinet]['height'];
+            }
+        }
+
+        // Eerste verdieping: V1-257 belongs on the landing, against the wall
+        // toward the bathroom and clear of the bathroom doorway. V1-258 stays
+        // on top of it.
+        $landingCabinet = $find('257', 'upper');
+        $landingTv = $find('258', 'upper');
+        if ($landingCabinet !== false) {
+            $bathroomWallX = 1.8605;
+            $bathroomDoorTop = 1.2713;
+            $items[$landingCabinet]['rotation'] = 90;
+            $items[$landingCabinet]['x'] = $bathroomWallX - ($items[$landingCabinet]['depth'] / 2);
+            $items[$landingCabinet]['y'] = $bathroomDoorTop + .05 + ($items[$landingCabinet]['width'] / 2);
+
+            if ($landingTv !== false) {
+                $items[$landingTv]['rotation'] = 90;
+                $items[$landingTv]['x'] = $items[$landingCabinet]['x'];
+                $items[$landingTv]['y'] = $items[$landingCabinet]['y'];
+                $items[$landingTv]['base_z'] = $items[$landingCabinet]['height'];
+            }
+        }
+
+        // Badkamer: V1-256 is flush against the wall bordering the landing.
+        // The new mirror follows its measured width and hangs 10 cm above it.
+        $bathSink = $find('256', 'upper');
+        $bathMirror = $find('256-mirror', 'upper');
+        if ($bathSink !== false) {
+            $bathroomBottom = .2783;
+            $items[$bathSink]['rotation'] = 180;
+            $items[$bathSink]['y'] = $bathroomBottom + ($items[$bathSink]['depth'] / 2);
+
+            if ($bathMirror !== false) {
+                $items[$bathMirror]['rotation'] = 180;
+                $items[$bathMirror]['x'] = $items[$bathSink]['x'];
+                $items[$bathMirror]['y'] = $bathroomBottom + ($items[$bathMirror]['depth'] / 2);
+                $items[$bathMirror]['width'] = $items[$bathSink]['width'];
+                $items[$bathMirror]['base_z'] = $items[$bathSink]['height'] + .10;
             }
         }
 
