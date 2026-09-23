@@ -16,31 +16,43 @@ for wall in upper['walls']:
   wall[:]=[-.3499,.2292,.2801,.2292]
   break
 
-# User-measured attic geometry. Laundry is exactly 5.50 x 2.20 m on the
-# complete right side. Homey room "Zolder" (attic-closet) is 2.30 x 2.00 m
-# in the outside top-left corner. Lily's usable bedroom width is 4.40 m,
-# bounded by the knee wall at x=-2.60 and the laundry partition at x=1.80.
+# Final measured attic geometry inside the 8.00 x 5.50 m roof shell.
+# Longitudinal clear dimensions:
+# 0.60 knee-wall zone + 4.40 rooms + 0.20 wall + 2.20 laundry
+# + 0.60 knee-wall zone = 8.00 m.
+# Across the house: Lily 3.30 + 0.20 wall + closet/Zolder 2.00 = 5.50 m.
+# Upper room block: closet 1.90 + 0.20 wall + Zolder 2.30 = 4.40 m.
 attic=next(f for f in data['floors'] if f['id']=='attic')
-laundry=next(r for r in attic['rooms'] if r['id']=='laundry')
-laundry['polygon']=[[1.8,-2.75],[4,-2.75],[4,2.75],[1.8,2.75]]
 bedroom=next(r for r in attic['rooms'] if r['id']=='attic-bedroom')
-bedroom['polygon']=[[-2.6,-2.75],[1.8,-2.75],[1.8,.1807],[-2.6,.1807]]
+bedroom['polygon']=[[-3.4,-2.75],[1.0,-2.75],[1.0,.55],[-3.4,.55]]
 storage=next(r for r in attic['rooms'] if r['id']=='attic-closet')
-storage['polygon']=[[-4,.75],[-1.7,.75],[-1.7,2.75],[-4,2.75]]
-for wall in attic['walls']:
- if abs(wall[0]-1.8579)<1e-4 and abs(wall[2]-1.8579)<1e-4:
-  wall[0]=wall[2]=1.8
-for wall in attic['walls']:
- if all(abs(a-b)<1e-4 for a,b in zip(wall,[-4,.2248,-2.8679,.2248])):
-  wall[:]=[-4,.75,-2.8679,.75]
- elif all(abs(a-b)<1e-4 for a,b in zip(wall,[-1.872,.2248,-1.2002,.2248])):
-  wall[:]=[-1.872,.75,-1.7,.75]
- elif abs(wall[0]+1.2942)<1e-4 and abs(wall[2]+1.2942)<1e-4:
-  wall[:]=[-1.7,.75,-1.7,2.75]
- elif abs(wall[0]+.209)<1e-4 and abs(wall[1]-.2248)<1e-4 and abs(wall[2]-1.8579)<1e-4:
-  wall[2]=1.8
-if not any(abs(w[0]+2.6)<1e-4 and abs(w[2]+2.6)<1e-4 for w in attic['walls']):
- attic['walls'].append([-2.6,-2.75,-2.6,.1807])
+storage['polygon']=[[-3.4,.75],[-1.5,.75],[-1.5,2.75],[-3.4,2.75]]
+zolder=next(r for r in attic['rooms'] if r['id']=='attic-hall')
+zolder['polygon']=[[-1.3,.75],[1.0,.75],[1.0,2.75],[-1.3,2.75]]
+stairs_room=next(r for r in attic['rooms'] if r['id']=='attic-stairs')
+stairs_room['polygon']=[[-1.3,1.70],[1.0,1.70],[1.0,2.75],[-1.3,2.75]]
+laundry=next(r for r in attic['rooms'] if r['id']=='laundry')
+laundry['polygon']=[[1.2,-2.75],[3.4,-2.75],[3.4,2.75],[1.2,2.75]]
+
+# Wall centre lines. The three structural room partitions are 20 cm thick in
+# the renderer below; their centre lines therefore sit exactly in the 20 cm
+# gaps between the clear room polygons. Knee walls are 10 cm thick and are
+# centred outside the usable room, leaving their inner faces at x=-3.40/3.40.
+attic['walls']=[
+ [-4,-2.75,4,-2.75],
+ [-4,-2.75,-4,2.75],
+ [-4,2.75,4,2.75],
+ [4,-2.75,4,2.75],
+ [-3.45,-2.75,-3.45,2.75],
+ [3.45,-2.75,3.45,2.75],
+ [1.1,-2.75,1.1,.90],
+ [1.1,1.80,1.1,2.75],
+ [-3.4,.65,-2.85,.65],
+ [-2.05,.65,-1.5,.65],
+ [-1.3,.65,-.4,.65],
+ [.4,.65,1.0,.65],
+ [-1.4,.75,-1.4,2.75],
+]
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.context.scene.unit_settings.system='METRIC'
@@ -49,30 +61,6 @@ def mat(name,color):
 wallmat=mat('Warm lime plaster',(0.77,0.75,0.69));wood=mat('Natural oak',(0.47,0.34,0.21));tile=mat('Warm stone',(0.58,0.59,0.56));edge=mat('Cut wall cap',(0.27,0.29,0.30))
 brick=mat('Outer brick',(0.37,0.20,0.13));cavity=mat('Insulated cavity section',(0.33,0.34,0.30))
 furniture=json.loads(Path(os.environ.get('FURNITURE_INPUT',str(ROOT/'assets/blender/furniture.json'))).read_text())['items']
-# Keep attic furniture inside the newly measured usable area. The 4.40 m room
-# is 1.4062 m narrower than the traced 5.8062 m footprint, so the open
-# wardrobe is shortened by the same amount as requested. FurnitureLayout may
-# already have applied that correction, so only shorten legacy input here.
-for item in furniture:
- if item.get('floor')!='attic':
-  continue
- item_id=str(item.get('id'))
- if item_id=='903':
-  if item['width']>1.5:
-   item['width']=max(.1,item['width']-1.4062)
-  item['rotation']=90
-  item['x']=-1.7-(item['depth']/2)
-  item['y']=2.75-(item['width']/2)
- elif item_id=='260':
-  item['rotation']=270
-  item['x']=-2.6+(item['depth']/2)
- elif item_id=='259':
-  item['rotation']=270
-  item['x']=-2.6+(item['depth']/2)
-  item['y']=-2.75+(item['width']/2)
- elif item_id=='905':
-  item['rotation']=270
-  item['x']=-2.6+(item['depth']/2)
 build_furniture=runpy.run_path(str(ROOT/'assets/blender/build_furniture.py'))['build_furniture']
 custom_module=runpy.run_path(str(ROOT/'assets/blender/build_custom_furniture.py'))
 build_custom_furniture=custom_module['build_custom_furniture'];custom_kinds=custom_module['CUSTOM_KINDS']
@@ -80,10 +68,15 @@ palette={'oak':mat('Furniture oak',(.52,.36,.22)),'fabric':mat('Warm grey uphols
 for f in data['floors']:
  bpy.ops.object.select_all(action='DESELECT');objects=[]
  for room in f['rooms']:
+  # On the attic the stair footprint is metadata for the map. The actual floor
+  # is the Zolder (attic-hall) polygon with the stair opening cut out below.
+  if f['id']=='attic' and room['id']=='attic-stairs':
+   continue
   verts=[(x,y,0) for x,y in room['polygon']];mesh=bpy.data.meshes.new(room['id']);mesh.from_pydata(verts,[],[list(range(len(verts)))]);mesh.update()
   o=bpy.data.objects.new('room__'+room['id'],mesh);bpy.context.collection.objects.link(o);o.data.materials.append(tile if any(s in room['id'] for s in ['wc','bath','utility','laundry','hall','stairs']) else wood)
   solid=o.modifiers.new('Floor thickness','SOLIDIFY');solid.thickness=.15;objects.append(o)
-  if f['id'] in ['attic','upper'] and room['id']==f['id']+'-stairs':
+  cut_stairs=(f['id']=='upper' and room['id']=='upper-stairs') or (f['id']=='attic' and room['id']=='attic-hall')
+  if cut_stairs:
    stair=next(i for i in furniture if i['kind']=='winder_stairs' and i['floor']==f['id'])
    bpy.ops.mesh.primitive_cube_add(size=1,location=(stair['x'],stair['y'],0))
    bpy.context.object.dimensions=(stair['width']+.03,stair['depth']+.03,1)
@@ -97,7 +90,13 @@ for f in data['floors']:
   # The perimeter coordinates are the supplied INTERNAL wall faces.
   normals=([(0,-1),(-1,0),(-1,0),(-1,0),(0,1),(-1,0),(0,1),(1,0),(1,0),(1,0)] if f['id']=='ground' else [(0,-1),(-1,0),(0,1),(1,0)])
   outside=normals[i] if i<len(normals) else None
-  layers=[(.10,.05,wallmat),(.12,.16,cavity),(.10,.27,brick)] if outside else [(.10,0,wallmat)]
+  inner_thickness=.10
+  if f['id']=='attic' and outside is None:
+   vertical=abs(x-X)<1e-4
+   horizontal=abs(y-Y)<1e-4
+   if (vertical and (abs(x-1.1)<1e-4 or abs(x+1.4)<1e-4)) or (horizontal and abs(y-.65)<1e-4):
+    inner_thickness=.20
+  layers=[(.10,.05,wallmat),(.12,.16,cavity),(.10,.27,brick)] if outside else [(inner_thickness,0,wallmat)]
   for layer,(thickness,offset,material) in enumerate(layers):
    dx,dy=outside or (0,0)
    bpy.ops.mesh.primitive_cube_add(size=1,location=((x+X)/2+dx*offset,(y+Y)/2+dy*offset,.65))
