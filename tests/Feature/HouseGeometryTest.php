@@ -2,10 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\BuildFurniture;
+use App\Services\FurnitureLayout;
 use App\Services\HouseLayout;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 use Tests\TestCase;
 
 class HouseGeometryTest extends TestCase
@@ -94,5 +98,43 @@ class HouseGeometryTest extends TestCase
         $this->assertEquals(1.30, (float) $after->width);
         $this->assertEquals(0.40, (float) $after->depth);
         $this->assertEquals(0.90, (float) $after->height);
+
+        $blackPanel = collect(app(FurnitureLayout::class)->items())
+            ->first(fn ($item) => $item['floor'] === 'attic' && $item['id'] === '905');
+        $this->assertSame('dark', $blackPanel['material_override']);
+    }
+
+    public function test_blender_build_payload_uses_the_same_database_geometry(): void
+    {
+        $directory = sys_get_temp_dir().'/house-source-test-'.bin2hex(random_bytes(8));
+        config(['furniture.blender' => '/bin/false', 'furniture.build_path' => $directory]);
+
+        DB::table('house_walls')
+            ->where('floor_id', 'upper')
+            ->where('name', 'between-bedroom-doors-63cm')
+            ->update(['x1' => -0.4321]);
+        DB::table('furniture_layouts')->where('id', 1)->update([
+            'revision' => 1,
+            'status' => 'queued',
+        ]);
+
+        $job = new BuildFurniture(1);
+        try {
+            $job->handle(app(FurnitureLayout::class), app(HouseLayout::class));
+            $this->fail('The intentionally failing Blender command should have thrown.');
+        } catch (ProcessFailedException) {
+            $payload = json_decode(
+                file_get_contents($directory.'/1/input.json'),
+                true,
+                flags: JSON_THROW_ON_ERROR,
+            );
+            $upper = collect($payload['house']['floors'])->firstWhere('id', 'upper');
+            $wall = collect($upper['walls'])->firstWhere('name', 'between-bedroom-doors-63cm');
+
+            $this->assertEquals(-0.4321, $wall['x1']);
+            $this->assertNotEmpty($payload['items']);
+        } finally {
+            File::deleteDirectory($directory);
+        }
     }
 }
