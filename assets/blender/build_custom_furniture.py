@@ -1,7 +1,7 @@
 """Custom furniture shapes for user-measured pieces that are not in the traced source."""
 import bpy, math
 
-CUSTOM_KINDS={'hanging_desk','monitor','laptop','wardrobe_drawers','micke_desk','kobra4','skadis_filament','storage_rack','laundry_basket'}
+CUSTOM_KINDS={'hanging_desk','monitor','laptop','wardrobe_drawers','micke_desk','kobra4','skadis_filament','storage_rack','laundry_basket','wall_radiator'}
 
 def build_custom_furniture(items, floor, materials):
     objects=[]
@@ -141,5 +141,16 @@ def build_custom_furniture(items, floor, materials):
             for z in [h*.25,h*.50,h*.75]:
                 box('woven_front',(w*.84,.008,.012),(0,d/2+.005,z),'oak',.002)
                 box('woven_back',(w*.84,.008,.012),(0,-d/2-.005,z),'oak',.002)
+
+        elif k=='wall_radiator':
+            # Slim wall-mounted panel radiator with vertical front ribs.
+            box('radiator_body',(w,d,h),(0,0,h/2),'ceramic',.012)
+            ribs=max(5,int(w/.075))
+            rib_w=max(.012,w/(ribs*4))
+            for n in range(ribs):
+                x=-w/2+(n+.5)*w/ribs
+                box('rib_'+str(n+1),(rib_w,.012,h-.06),(x,d/2+.008,h/2),'metal',.002)
+            box('top_grille',(w-.04,d*.72,.018),(0,0,h-.012),'metal',.003)
+            cylinder('valve',.025,.08,(w/2-.05,d/2+.035,.10),'metal',(math.pi/2,0,0))
 
     return objects
