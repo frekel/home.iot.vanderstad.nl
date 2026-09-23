@@ -69,7 +69,23 @@ Route::get('/dashboard/energy', function (HomeyClient $homey) {
     return response()->json($energy, $energy['available'] ? 200 : 503)->header('Cache-Control', 'no-store');
 })->middleware('throttle:30,1');
 
-Route::get('/dashboard/furniture', fn (FurnitureLayout $layout) => response()->json($layout->state())->header('Cache-Control', 'no-store'));
+Route::get('/dashboard/furniture', function (FurnitureLayout $layout) {
+    $state = $layout->state();
+
+    // A manual floorplan:rebuild can replace a model without changing the
+    // furniture revision. Add the generated file mtime so the browser cannot
+    // keep serving the previous immutable GLB for that same revision.
+    if ($state['model_revision'] !== null) {
+        foreach (['ground', 'upper', 'attic'] as $floor) {
+            $path = config('furniture.build_path').'/'.$state['model_revision'].'/'.$floor.'.glb';
+            if (is_file($path)) {
+                $state['models'][$floor] .= '?v='.filemtime($path);
+            }
+        }
+    }
+
+    return response()->json($state)->header('Cache-Control', 'no-store');
+});
 Route::put('/dashboard/furniture', function (Request $request, FurnitureLayout $layout) {
     $data = $request->validate([
         'revision' => ['required', 'integer', 'min:0'],
