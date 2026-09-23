@@ -13,26 +13,34 @@ class FurnitureLayout
         $items = json_decode(file_get_contents(base_path('assets/blender/furniture.json')), true, flags: JSON_THROW_ON_ERROR)['items'];
 
         // Cabinet + TV for the first-floor landing. Their exact placement
-        // against the bathroom wall is calculated after saved dimensions are applied.
+        // against the wall between the two bedroom doors is calculated below.
         $items[] = [
             'id' => '257', 'floor' => 'upper', 'kind' => 'cabinet',
-            'x' => 1.69, 'y' => 1.68,
+            'x' => -0.0349, 'y' => 0.3992,
             'width' => 0.71, 'depth' => 0.34, 'height' => 0.87,
-            'rotation' => 90, 'source_shape' => 'dresser', 'measured' => true,
+            'rotation' => 180, 'source_shape' => 'dresser', 'measured' => true,
         ];
         $items[] = [
             'id' => '258', 'floor' => 'upper', 'kind' => 'tv',
-            'x' => 1.69, 'y' => 1.68,
+            'x' => -0.0349, 'y' => 0.3992,
             'width' => 0.62, 'depth' => 0.10, 'height' => 0.40,
-            'rotation' => 90, 'source_shape' => 'flat_tv',
+            'rotation' => 180, 'source_shape' => 'flat_tv',
             'base_z' => 0.87, 'standing' => true, 'measured' => true,
         ];
         $items[] = [
             'id' => '256-mirror', 'floor' => 'upper', 'kind' => 'mirror',
-            'x' => 2.5297, 'y' => 0.2933,
+            'x' => 2.7297, 'y' => 0.2933,
             'width' => 1.5135, 'depth' => 0.03, 'height' => 0.75,
             'rotation' => 180, 'source_shape' => 'user_specified',
             'base_z' => 0.67, 'measured' => true,
+        ];
+        $items[] = [
+            'id' => '256-radiator', 'floor' => 'upper', 'kind' => 'Wandradiator',
+            'model_kind' => 'wall_radiator',
+            'x' => 3.95, 'y' => 0.6533,
+            'width' => 0.75, 'depth' => 0.10, 'height' => 0.60,
+            'base_z' => 0.15, 'rotation' => 270,
+            'source_shape' => 'user_specified', 'measured' => true,
         ];
 
         // Bijspringer (upper-floor office). Exact placement against the Levi
@@ -43,16 +51,16 @@ class FurnitureLayout
             ['id' => '261', 'floor' => 'upper', 'kind' => 'Monitor', 'model_kind' => 'monitor', 'x' => -1.73, 'y' => 2.67, 'width' => 0.54, 'depth' => 0.15, 'height' => 0.25, 'base_z' => 1.00, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
             ['id' => '262', 'floor' => 'upper', 'kind' => 'Laptop', 'model_kind' => 'laptop', 'x' => -2.00, 'y' => 2.20, 'width' => 0.36, 'depth' => 0.29, 'height' => 0.25, 'base_z' => 1.00, 'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true],
             ['id' => '263', 'floor' => 'upper', 'kind' => 'Kledingkast', 'model_kind' => 'wardrobe_drawers', 'x' => -3.30, 'y' => 2.435, 'width' => 1.40, 'depth' => 0.63, 'height' => 1.88, 'rotation' => 180, 'source_shape' => 'user_measured', 'measured' => true],
-            ['id' => '264', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk', 'x' => -3.635, 'y' => .5633, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
-            ['id' => '265', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk', 'x' => -2.905, 'y' => .5633, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
-            ['id' => '266', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk', 'x' => -3.635, 'y' => .5633, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75, 'base_z' => 0.75, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
-            ['id' => '267', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk', 'x' => -2.905, 'y' => .5633, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75, 'base_z' => 0.75, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
-            ['id' => '268', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4', 'x' => -3.635, 'y' => .5633, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50, 'rotation' => 0, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true],
-            ['id' => '269', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4', 'x' => -2.905, 'y' => .5633, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50, 'rotation' => 0, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true],
-            ['id' => '270', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4', 'x' => -3.635, 'y' => .5633, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50, 'base_z' => 0.75, 'rotation' => 0, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true],
-            ['id' => '271', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4', 'x' => -2.905, 'y' => .5633, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50, 'base_z' => 0.75, 'rotation' => 0, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true],
-            ['id' => 'bijspringer-skadis-1', 'floor' => 'upper', 'kind' => 'SKADIS met filament', 'model_kind' => 'skadis_filament', 'x' => -1.718, 'y' => .2933, 'width' => 0.55, 'depth' => 0.03, 'height' => 0.55, 'base_z' => 0.95, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
-            ['id' => 'bijspringer-skadis-2', 'floor' => 'upper', 'kind' => 'SKADIS met filament', 'model_kind' => 'skadis_filament', 'x' => -1.718, 'y' => .2933, 'width' => 0.55, 'depth' => 0.03, 'height' => 0.55, 'base_z' => 1.50, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => '264', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk', 'x' => -3.335, 'y' => .5633, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => '265', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk', 'x' => -2.605, 'y' => .5633, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => '266', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk', 'x' => -3.335, 'y' => .5633, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75, 'base_z' => 0.75, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => '267', 'floor' => 'upper', 'kind' => 'MICKE bureau', 'model_kind' => 'micke_desk', 'x' => -2.605, 'y' => .5633, 'width' => 0.73, 'depth' => 0.57, 'height' => 0.75, 'base_z' => 0.75, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => '268', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4', 'x' => -3.335, 'y' => .5633, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50, 'rotation' => 0, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true],
+            ['id' => '269', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4', 'x' => -2.605, 'y' => .5633, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50, 'rotation' => 0, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true],
+            ['id' => '270', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4', 'x' => -3.335, 'y' => .5633, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50, 'base_z' => 0.75, 'rotation' => 0, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true],
+            ['id' => '271', 'floor' => 'upper', 'kind' => '3D-printer', 'model_kind' => 'kobra4', 'x' => -2.605, 'y' => .5633, 'width' => 0.40, 'depth' => 0.55, 'height' => 0.50, 'base_z' => 0.75, 'rotation' => 0, 'source_shape' => 'Anycubic Kobra 4', 'measured' => true],
+            ['id' => 'bijspringer-skadis-1', 'floor' => 'upper', 'kind' => 'SKADIS met filament', 'model_kind' => 'skadis_filament', 'x' => -1.918, 'y' => .2933, 'width' => 0.55, 'depth' => 0.03, 'height' => 0.55, 'base_z' => 0.95, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
+            ['id' => 'bijspringer-skadis-2', 'floor' => 'upper', 'kind' => 'SKADIS met filament', 'model_kind' => 'skadis_filament', 'x' => -1.918, 'y' => .2933, 'width' => 0.55, 'depth' => 0.03, 'height' => 0.55, 'base_z' => 1.50, 'rotation' => 0, 'source_shape' => 'user_measured', 'measured' => true],
         ]);
 
         // Attic additions are real furniture items as well, so they are visible
@@ -101,12 +109,29 @@ class FurnitureLayout
             return false;
         };
 
-        // Levi's measured bed stays in the outside bottom-right corner.
+        // V1-239 sits between V1-236 and V1-220. Its back edge aligns with the
+        // fronts of both cabinets instead of touching the outside wall.
         $bedIndex = $find('239', 'upper');
+        $leftBedCabinet = $find('236', 'upper');
+        $rightBedCabinet = $find('220', 'upper');
         if ($bedIndex !== false) {
             $items[$bedIndex]['rotation'] = 0;
-            $items[$bedIndex]['x'] = 4.0 - ($items[$bedIndex]['width'] / 2);
-            $items[$bedIndex]['y'] = -2.75 + ($items[$bedIndex]['depth'] / 2);
+            if ($leftBedCabinet !== false && $rightBedCabinet !== false) {
+                $leftInner = $items[$leftBedCabinet]['x'] + ($items[$leftBedCabinet]['width'] / 2);
+                $rightInner = $items[$rightBedCabinet]['x'] - ($items[$rightBedCabinet]['width'] / 2);
+                $items[$bedIndex]['x'] = ($leftInner + $rightInner) / 2;
+                $cabinetFront = max(
+                    $items[$leftBedCabinet]['y'] + ($items[$leftBedCabinet]['depth'] / 2),
+                    $items[$rightBedCabinet]['y'] + ($items[$rightBedCabinet]['depth'] / 2),
+                );
+                $items[$bedIndex]['y'] = $cabinetFront + ($items[$bedIndex]['depth'] / 2);
+            }
+        }
+
+        // V1-219: rotate 45 degrees counter-clockwise from its original 180°.
+        $mirrorCabinet = $find('219', 'upper');
+        if ($mirrorCabinet !== false) {
+            $items[$mirrorCabinet]['rotation'] = 225;
         }
 
         // Slaapkamer: V1-244 is flush against the partition wall toward Levi.
@@ -140,33 +165,38 @@ class FurnitureLayout
             }
         }
 
-        // Eerste verdieping: V1-257 belongs on the landing, against the wall
-        // toward the bathroom and clear of the bathroom doorway. V1-258 stays
-        // on top of it.
+        // Eerste verdieping: V1-257 sits against the 63 cm wall between the two
+        // bedroom doors: the wall bordering both the slaapkamer and Levi's room.
         $landingCabinet = $find('257', 'upper');
         $landingTv = $find('258', 'upper');
         if ($landingCabinet !== false) {
-            $bathroomWallX = 1.8605;
-            $bathroomDoorTop = 1.2713;
-            $items[$landingCabinet]['rotation'] = 90;
-            $items[$landingCabinet]['x'] = $bathroomWallX - ($items[$landingCabinet]['depth'] / 2);
-            $items[$landingCabinet]['y'] = $bathroomDoorTop + .05 + ($items[$landingCabinet]['width'] / 2);
+            $betweenBedroomsLeft = -.3499;
+            $betweenBedroomsRight = .2801;
+            $bedroomDoorWallY = .2292;
+            $items[$landingCabinet]['rotation'] = 180;
+            $items[$landingCabinet]['x'] = ($betweenBedroomsLeft + $betweenBedroomsRight) / 2;
+            $items[$landingCabinet]['y'] = $bedroomDoorWallY + ($items[$landingCabinet]['depth'] / 2);
 
             if ($landingTv !== false) {
-                $items[$landingTv]['rotation'] = 90;
+                $items[$landingTv]['rotation'] = 180;
                 $items[$landingTv]['x'] = $items[$landingCabinet]['x'];
                 $items[$landingTv]['y'] = $items[$landingCabinet]['y'];
                 $items[$landingTv]['base_z'] = $items[$landingCabinet]['height'];
             }
         }
 
-        // Badkamer: V1-256 is flush against the wall bordering the landing.
-        // The new mirror follows its measured width and hangs 10 cm above it.
+        // Badkamer: V1-256 remains against the lower wall but moves 20 cm left
+        // on the furniture map (positive world X on the mirrored upper floor).
+        // The mirror follows it. A 75 cm wall radiator is on the adjoining outer
+        // wall next to the sink because both do not fit side by side on one wall.
         $bathSink = $find('256', 'upper');
         $bathMirror = $find('256-mirror', 'upper');
+        $bathRadiator = $find('256-radiator', 'upper');
         if ($bathSink !== false) {
             $bathroomBottom = .2783;
+            $bathroomRight = 4.0;
             $items[$bathSink]['rotation'] = 180;
+            $items[$bathSink]['x'] += .20;
             $items[$bathSink]['y'] = $bathroomBottom + ($items[$bathSink]['depth'] / 2);
 
             if ($bathMirror !== false) {
@@ -176,10 +206,16 @@ class FurnitureLayout
                 $items[$bathMirror]['width'] = $items[$bathSink]['width'];
                 $items[$bathMirror]['base_z'] = $items[$bathSink]['height'] + .10;
             }
+
+            if ($bathRadiator !== false) {
+                $items[$bathRadiator]['rotation'] = 270;
+                $items[$bathRadiator]['x'] = $bathroomRight - ($items[$bathRadiator]['depth'] / 2);
+                $items[$bathRadiator]['y'] = $bathroomBottom + ($items[$bathRadiator]['width'] / 2);
+            }
         }
 
-        // Bijspringer: two MICKE stacks against the wall shared with Levi,
-        // directly opposite V1-263. The second pair sits on top of the first.
+        // Bijspringer: two MICKE stacks remain against the wall shared with Levi,
+        // but the entire run starts 30 cm away from the outside wall.
         $officeBottom = .2783;
         $officeLeft = -4.0;
         $officeRight = -1.343;
@@ -189,7 +225,7 @@ class FurnitureLayout
         $desk267 = $find('267', 'upper');
 
         if ($desk264 !== false && $desk265 !== false) {
-            $leftDeskX = $officeLeft + ($items[$desk264]['width'] / 2);
+            $leftDeskX = $officeLeft + .30 + ($items[$desk264]['width'] / 2);
             $rightDeskX = $leftDeskX + ($items[$desk264]['width'] / 2) + ($items[$desk265]['width'] / 2);
 
             foreach ([[$desk264, $leftDeskX], [$desk266, $leftDeskX], [$desk265, $rightDeskX], [$desk267, $rightDeskX]] as [$index, $x]) {
@@ -212,19 +248,19 @@ class FurnitureLayout
             }
         }
 
-        // Both SKADIS boards are on the same Levi wall, vertically one below
-        // the other, leaving 10 cm clearance to the office/landing boundary.
+        // Both SKADIS boards move 20 cm toward the outside wall (away from the
+        // door) and remain vertically one below the other on the Levi wall.
         $skadis1 = $find('bijspringer-skadis-1', 'upper');
         $skadis2 = $find('bijspringer-skadis-2', 'upper');
         if ($skadis1 !== false) {
             $items[$skadis1]['rotation'] = 0;
-            $items[$skadis1]['x'] = $officeRight - .10 - ($items[$skadis1]['width'] / 2);
+            $items[$skadis1]['x'] = $officeRight - .10 - .20 - ($items[$skadis1]['width'] / 2);
             $items[$skadis1]['y'] = $officeBottom + ($items[$skadis1]['depth'] / 2);
             $items[$skadis1]['base_z'] = .95;
         }
         if ($skadis2 !== false) {
             $items[$skadis2]['rotation'] = 0;
-            $items[$skadis2]['x'] = $skadis1 !== false ? $items[$skadis1]['x'] : $officeRight - .10 - ($items[$skadis2]['width'] / 2);
+            $items[$skadis2]['x'] = $skadis1 !== false ? $items[$skadis1]['x'] : $officeRight - .10 - .20 - ($items[$skadis2]['width'] / 2);
             $items[$skadis2]['y'] = $officeBottom + ($items[$skadis2]['depth'] / 2);
             $items[$skadis2]['base_z'] = $skadis1 !== false ? $items[$skadis1]['base_z'] + $items[$skadis1]['height'] : 1.50;
         }
