@@ -20,68 +20,67 @@ if (middleWall) {
     middleWall[2] = 0.2801;
 }
 
-// Measured attic geometry. The laundry occupies the complete right side and
-// is exactly 5.50 x 2.20 m. The Homey "Zolder" storage room is the top-left
-// room and is exactly 2.30 x 2.00 m, kept anchored to the outside corner.
-// Lily's usable bedroom width is 4.40 m because a knee wall was installed
-// beneath the sloping roof. The roof shell itself remains at its full size.
+// Final measured attic geometry inside an 8.00 x 5.50 m roof shell.
+// Along the 8 m axis: 0.60 knee-wall void + 4.40 rooms + 0.20 wall
+// + 2.20 laundry + 0.60 knee-wall void.
+// Across the 5.50 m axis: Lily 3.30 + 0.20 wall + Zolder/closet 2.00.
+// In the upper 4.40 m block: closet 1.90 + 0.20 wall + Zolder 2.30.
 const attic = house.floors.find((floor) => floor.id === 'attic');
 if (attic) {
-    const laundry = attic.rooms.find((room) => room.id === 'laundry');
-    if (laundry) {
-        laundry.polygon = [[1.8, -2.75], [4, -2.75], [4, 2.75], [1.8, 2.75]];
-    }
-
     const bedroom = attic.rooms.find((room) => room.id === 'attic-bedroom');
     if (bedroom) {
-        bedroom.polygon = [[-2.6, -2.75], [1.8, -2.75], [1.8, 0.1807], [-2.6, 0.1807]];
+        bedroom.polygon = [[-3.4, -2.75], [1.0, -2.75], [1.0, 0.55], [-3.4, 0.55]];
     }
 
     const storage = attic.rooms.find((room) => room.id === 'attic-closet');
     if (storage) {
-        storage.polygon = [[-4, 0.75], [-1.7, 0.75], [-1.7, 2.75], [-4, 2.75]];
+        storage.polygon = [[-3.4, 0.75], [-1.5, 0.75], [-1.5, 2.75], [-3.4, 2.75]];
     }
 
-    // Move the laundry partition to x=1.80, preserving its existing doorway.
-    for (const wall of attic.walls) {
-        if (Math.abs(wall[0] - 1.8579) < 0.0001 && Math.abs(wall[2] - 1.8579) < 0.0001) {
-            wall[0] = 1.8;
-            wall[2] = 1.8;
-        }
+    const zolder = attic.rooms.find((room) => room.id === 'attic-hall');
+    if (zolder) {
+        zolder.polygon = [[-1.3, 0.75], [1.0, 0.75], [1.0, 2.75], [-1.3, 2.75]];
     }
 
-    // Add the knee wall that creates Lily's 4.40 m usable room width.
-    const lilyKneeWall = attic.walls.find((wall) =>
-        Math.abs(wall[0] + 2.6) < 0.0001 && Math.abs(wall[2] + 2.6) < 0.0001,
-    );
-    if (!lilyKneeWall) {
-        attic.walls.push([-2.6, -2.75, -2.6, 0.1807]);
+    // The stair opening lives inside the 2.30 x 2.00 m Zolder room.
+    const stairs = attic.rooms.find((room) => room.id === 'attic-stairs');
+    if (stairs) {
+        stairs.polygon = [[-1.3, 1.70], [1.0, 1.70], [1.0, 2.75], [-1.3, 2.75]];
     }
 
-    // Rebuild the measured Zolder boundary while preserving the existing
-    // approximately 1 m doorway in its lower wall.
-    const storageWall1 = attic.walls.find((wall) =>
-        Math.abs(wall[0] + 4) < 0.0001 && Math.abs(wall[1] - 0.2248) < 0.0001 &&
-        Math.abs(wall[2] + 2.8679) < 0.0001 && Math.abs(wall[3] - 0.2248) < 0.0001,
-    );
-    if (storageWall1) storageWall1.splice(0, 4, -4, 0.75, -2.8679, 0.75);
+    const laundry = attic.rooms.find((room) => room.id === 'laundry');
+    if (laundry) {
+        laundry.polygon = [[1.2, -2.75], [3.4, -2.75], [3.4, 2.75], [1.2, 2.75]];
+    }
 
-    const storageWall2 = attic.walls.find((wall) =>
-        Math.abs(wall[0] + 1.872) < 0.0001 && Math.abs(wall[1] - 0.2248) < 0.0001 &&
-        Math.abs(wall[2] + 1.2002) < 0.0001 && Math.abs(wall[3] - 0.2248) < 0.0001,
-    );
-    if (storageWall2) storageWall2.splice(0, 4, -1.872, 0.75, -1.7, 0.75);
+    // Rebuild all attic walls from the measured geometry. The outer roof shell
+    // remains 8.00 x 5.50 m. Interior room walls occupy the 20 cm gaps between
+    // the clear room dimensions. Door openings are retained for both upper
+    // rooms and between Zolder and Washok.
+    attic.walls.splice(0, attic.walls.length,
+        [-4, -2.75, 4, -2.75],
+        [-4, -2.75, -4, 2.75],
+        [-4, 2.75, 4, 2.75],
+        [4, -2.75, 4, 2.75],
 
-    const storageSide = attic.walls.find((wall) =>
-        Math.abs(wall[0] + 1.2942) < 0.0001 && Math.abs(wall[2] + 1.2942) < 0.0001,
-    );
-    if (storageSide) storageSide.splice(0, 4, -1.7, 0.75, -1.7, 2.75);
+        // Knee walls: 60 cm roof void outside each usable end.
+        [-3.4, -2.75, -3.4, 2.75],
+        [3.4, -2.75, 3.4, 2.75],
 
-    const hallWall = attic.walls.find((wall) =>
-        Math.abs(wall[0] + 0.209) < 0.0001 && Math.abs(wall[1] - 0.2248) < 0.0001 &&
-        Math.abs(wall[2] - 1.8579) < 0.0001,
+        // 20 cm wall between the 4.40 m room block and the Washok.
+        // Keep a 90 cm doorway inside the Zolder section.
+        [1.1, -2.75, 1.1, 0.90],
+        [1.1, 1.80, 1.1, 2.75],
+
+        // 20 cm wall between Lily and Kledingkast/Zolder. Two 80 cm doors.
+        [-3.4, 0.65, -2.85, 0.65],
+        [-2.05, 0.65, -1.5, 0.65],
+        [-1.3, 0.65, -0.4, 0.65],
+        [0.4, 0.65, 1.0, 0.65],
+
+        // 20 cm wall between Kledingkast and Zolder.
+        [-1.4, 0.75, -1.4, 2.75],
     );
-    if (hallWall) hallWall[2] = 1.8;
 }
 
 const RootApp = location.pathname === '/measure' ? MeasureApp : App;
