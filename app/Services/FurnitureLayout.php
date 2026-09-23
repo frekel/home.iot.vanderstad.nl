@@ -110,6 +110,7 @@ class FurnitureLayout
             DB::table('furniture_layouts')->where('id', 1)->update([
                 'status' => 'queued', 'started_at' => null, 'updated_at' => now(),
             ]);
+            BuildFurniture::dispatch($revision)->onConnection('furniture')->onQueue('furniture');
         });
 
         return $this->state();
