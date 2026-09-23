@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {computed,onMounted,ref,watch} from 'vue';
 import {ArrowLeft,Check,ChevronLeft,ChevronRight,House,RefreshCcw,Ruler,SkipForward,WandSparkles} from '@lucide/vue';
-import house from './house.json';
+import {house} from './house';
 import {furnitureState,refreshFurniture,type FurnitureItem,type FurnitureState} from './furniture';
 
 type Dimension='width'|'depth'|'height';
@@ -33,7 +33,7 @@ function roomLabel(id:string,fallback:string){const canonical=canonicalRoom(id);
 function floorLabel(id:string,fallback:string){return zoneNames.value[layout.value.floors[id]??'']?.name??floorNames[id]??fallback}
 function cm(value:number){return String(Math.round(value*100000)/1000)}
 function csrf(){return document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content??''}
-function mapPoint(x:number,y:number,floor:string){return floor==='ground'?[x,y]:[-x,-y]}
+function mapPoint(x:number,y:number,floor:string){const plan=house.floors.find(f=>f.id===floor);return plan?.display_mirrored?[-x,-y]:[x,y]}
 function footprint(i:FurnitureItem){const a=i.rotation*Math.PI/180;return [[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx,sy])=>{const x=sx!*i.width/2,y=sy!*i.depth/2;return mapPoint(i.x+x*Math.cos(a)-y*Math.sin(a),i.y+x*Math.sin(a)+y*Math.cos(a),i.floor).join(',')}).join(' ')}
 function clearField(key:Dimension){form.value[key]='';error.value=''}
 async function refreshHomeyLabels(){
