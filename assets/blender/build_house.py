@@ -18,10 +18,13 @@ for wall in upper['walls']:
 
 # User-measured attic geometry. Laundry is exactly 5.50 x 2.20 m on the
 # complete right side. Homey room "Zolder" (attic-closet) is 2.30 x 2.00 m
-# in the outside top-left corner. Preserve the existing door openings.
+# in the outside top-left corner. Lily's usable bedroom width is 4.40 m,
+# bounded by the knee wall at x=-2.60 and the laundry partition at x=1.80.
 attic=next(f for f in data['floors'] if f['id']=='attic')
 laundry=next(r for r in attic['rooms'] if r['id']=='laundry')
 laundry['polygon']=[[1.8,-2.75],[4,-2.75],[4,2.75],[1.8,2.75]]
+bedroom=next(r for r in attic['rooms'] if r['id']=='attic-bedroom')
+bedroom['polygon']=[[-2.6,-2.75],[1.8,-2.75],[1.8,.1807],[-2.6,.1807]]
 storage=next(r for r in attic['rooms'] if r['id']=='attic-closet')
 storage['polygon']=[[-4,.75],[-1.7,.75],[-1.7,2.75],[-4,2.75]]
 for wall in attic['walls']:
@@ -36,6 +39,8 @@ for wall in attic['walls']:
   wall[:]=[-1.7,.75,-1.7,2.75]
  elif abs(wall[0]+.209)<1e-4 and abs(wall[1]-.2248)<1e-4 and abs(wall[2]-1.8579)<1e-4:
   wall[2]=1.8
+if not any(abs(w[0]+2.6)<1e-4 and abs(w[2]+2.6)<1e-4 for w in attic['walls']):
+ attic['walls'].append([-2.6,-2.75,-2.6,.1807])
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.context.scene.unit_settings.system='METRIC'
@@ -44,6 +49,28 @@ def mat(name,color):
 wallmat=mat('Warm lime plaster',(0.77,0.75,0.69));wood=mat('Natural oak',(0.47,0.34,0.21));tile=mat('Warm stone',(0.58,0.59,0.56));edge=mat('Cut wall cap',(0.27,0.29,0.30))
 brick=mat('Outer brick',(0.37,0.20,0.13));cavity=mat('Insulated cavity section',(0.33,0.34,0.30))
 furniture=json.loads(Path(os.environ.get('FURNITURE_INPUT',str(ROOT/'assets/blender/furniture.json'))).read_text())['items']
+# Keep attic furniture inside the newly measured usable area. The 4.40 m room
+# is 1.4062 m narrower than the traced 5.8062 m footprint, so the open
+# wardrobe is shortened by the same amount as requested.
+for item in furniture:
+ if item.get('floor')!='attic':
+  continue
+ item_id=str(item.get('id'))
+ if item_id=='903':
+  item['width']=max(.1,item['width']-1.4062)
+  item['rotation']=90
+  item['x']=-1.7-(item['depth']/2)
+  item['y']=2.75-(item['width']/2)
+ elif item_id=='260':
+  item['rotation']=270
+  item['x']=-2.6+(item['depth']/2)
+ elif item_id=='259':
+  item['rotation']=270
+  item['x']=-2.6+(item['depth']/2)
+  item['y']=-2.75+(item['width']/2)
+ elif item_id=='905':
+  item['rotation']=270
+  item['x']=-2.6+(item['depth']/2)
 build_furniture=runpy.run_path(str(ROOT/'assets/blender/build_furniture.py'))['build_furniture']
 custom_module=runpy.run_path(str(ROOT/'assets/blender/build_custom_furniture.py'))
 build_custom_furniture=custom_module['build_custom_furniture'];custom_kinds=custom_module['CUSTOM_KINDS']
