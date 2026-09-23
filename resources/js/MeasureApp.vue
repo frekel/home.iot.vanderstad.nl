@@ -33,6 +33,9 @@ function roomLabel(id:string,fallback:string){const canonical=canonicalRoom(id);
 function floorLabel(id:string,fallback:string){return zoneNames.value[layout.value.floors[id]??'']?.name??floorNames[id]??fallback}
 function cm(value:number){return String(Math.round(value*100000)/1000)}
 function csrf(){return document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content??''}
+function mapPoint(x:number,y:number,floor:string){return floor==='ground'?[x,y]:[-x,-y]}
+function footprint(i:FurnitureItem){const a=i.rotation*Math.PI/180;return [[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx,sy])=>{const x=sx!*i.width/2,y=sy!*i.depth/2;return mapPoint(i.x+x*Math.cos(a)-y*Math.sin(a),i.y+x*Math.sin(a)+y*Math.cos(a),i.floor).join(',')}).join(' ')}
+function clearField(key:Dimension){form.value[key]='';error.value=''}
 async function refreshHomeyLabels(){
  try{
   const response=await fetch('/dashboard/status',{headers:{Accept:'application/json'},signal:AbortSignal.timeout(12000)});
@@ -77,6 +80,17 @@ const roomProcessed=computed(()=>roomItems.value.filter(i=>processed.value.has(r
 const progress=computed(()=>allItems.value.length?Math.round(processedCount.value/allItems.value.length*100):0);
 const modelOutdated=computed(()=>!!furnitureState.value&&furnitureState.value.model_revision!==furnitureState.value.revision);
 const buildBusy=computed(()=>building.value||['queued','building'].includes(furnitureState.value?.status??''));
+const roomMapPolygons=computed(()=>{
+ const active=room.value;if(!active?.floor)return [] as number[][][];
+ const floor=house.floors.find(f=>f.id===active.floor);
+ return (floor?.rooms??[]).filter(r=>canonicalRoom(r.id)===active.id).map(r=>r.polygon.map(p=>mapPoint(p[0]!,p[1]!,active.floor)));
+});
+const roomMapViewBox=computed(()=>{
+ const points=roomMapPolygons.value.flat();if(!points.length)return '0 0 1 1';
+ const xs=points.map(p=>p[0]!),ys=points.map(p=>p[1]!);const pad=.35;
+ const minX=Math.min(...xs)-pad,maxX=Math.max(...xs)+pad,minY=Math.min(...ys)-pad,maxY=Math.max(...ys)+pad;
+ return `${minX} ${minY} ${Math.max(.5,maxX-minX)} ${Math.max(.5,maxY-minY)}`;
+});
 
 function loadProgress(){
  try{measured.value=new Set(JSON.parse(localStorage.getItem(measuredKey)??'[]'));skipped.value=new Set(JSON.parse(localStorage.getItem(skippedKey)??'[]'))}catch{measured.value=new Set();skipped.value=new Set()}
@@ -136,12 +150,6 @@ onMounted(async()=>{loadProgress();try{await Promise.all([refreshFurniture(),ref
  </header>
 
  <main class="measure-main">
-  <section class="measure-progress-card">
-   <div class="measure-progress-copy"><strong>{{measuredCount}} gemeten</strong><span v-if="skippedCount">· {{skippedCount}} overgeslagen</span><span>· {{allItems.length}} totaal</span></div>
-   <div class="measure-progress-track"><i :style="{width:`${progress}%`}"/></div>
-   <small>{{progress}}% van deze meetronde verwerkt</small>
-  </section>
-
   <p v-if="error" class="measure-alert" role="alert">{{error}}</p>
   <p v-else-if="notice" class="measure-notice" role="status">{{notice}}</p>
 
@@ -174,13 +182,21 @@ onMounted(async()=>{loadProgress();try{await Promise.all([refreshFurniture(),ref
      <span v-else>Nog niet gemeten</span>
     </div>
 
+    <div v-if="roomMapPolygons.length" class="measure-room-map">
+     <div class="measure-map-caption"><span>{{room.label}}</span><strong><i/> {{reference(current)}} is het oranje meubel</strong></div>
+     <svg :viewBox="roomMapViewBox" preserveAspectRatio="xMidYMid meet" role="img" :aria-label="`${room.label}: ${reference(current)} ${label(current)} gemarkeerd`">
+      <polygon v-for="(polygon,index) in roomMapPolygons" :key="index" class="measure-map-room" :points="polygon.map(p=>p.join(',')).join(' ')"/>
+      <polygon v-for="item in roomItems" :key="reference(item)" class="measure-map-furniture" :class="{current:reference(item)===reference(current)}" :points="footprint(item)"><title>{{reference(item)}} · {{label(item)}}</title></polygon>
+     </svg>
+    </div>
+
     <fieldset class="measure-fields" :disabled="saving">
-     <label><span>Breedte</span><div><input v-model="form.width" inputmode="decimal" type="number" min="5" max="1100" step="0.1" autocomplete="off"/><b>cm</b></div></label>
-     <label><span>Diepte</span><div><input v-model="form.depth" inputmode="decimal" type="number" min="1" max="550" step="0.1" autocomplete="off"/><b>cm</b></div></label>
-     <label><span>Hoogte</span><div><input v-model="form.height" inputmode="decimal" type="number" min="1" max="400" step="0.1" autocomplete="off"/><b>cm</b></div></label>
+     <label><span>Breedte</span><div><input v-model="form.width" inputmode="decimal" type="number" min="5" max="1100" step="0.1" autocomplete="off" @focus="clearField('width')"/><b>cm</b></div></label>
+     <label><span>Diepte</span><div><input v-model="form.depth" inputmode="decimal" type="number" min="1" max="550" step="0.1" autocomplete="off" @focus="clearField('depth')"/><b>cm</b></div></label>
+     <label><span>Hoogte</span><div><input v-model="form.height" inputmode="decimal" type="number" min="1" max="400" step="0.1" autocomplete="off" @focus="clearField('height')"/><b>cm</b></div></label>
     </fieldset>
 
-    <p class="measure-hint">Meet breedte × diepte × hoogte. Je kunt op de iPhone ook de dicteerknop van het toetsenbord gebruiken.</p>
+    <p class="measure-hint">Meet breedte × diepte × hoogte. Tik een veld aan: de oude waarde wordt meteen gewist zodat je direct kunt typen of dicteren.</p>
     <button class="measure-primary" :disabled="saving" @click="saveAndNext"><Check :size="20"/>{{saving?'Opslaan…':'Opslaan & volgende'}}</button>
     <button class="measure-skip" :disabled="saving" @click="skip"><SkipForward :size="18"/>Overslaan</button>
    </section>
@@ -193,6 +209,12 @@ onMounted(async()=>{loadProgress();try{await Promise.all([refreshFurniture(),ref
   </template>
 
   <section v-else class="measure-card measure-loading"><House :size="24"/>Geen meubels gevonden.</section>
+
+  <section v-if="!loading && allItems.length" class="measure-progress-card measure-progress-bottom">
+   <div class="measure-progress-copy"><strong>{{measuredCount}} gemeten</strong><span v-if="skippedCount">· {{skippedCount}} overgeslagen</span><span>· {{allItems.length}} totaal</span></div>
+   <div class="measure-progress-track"><i :style="{width:`${progress}%`}"/></div>
+   <small>{{progress}}% van deze meetronde verwerkt</small>
+  </section>
  </main>
 </div>
 </template>
