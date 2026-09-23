@@ -34,10 +34,7 @@ stairs_room['polygon']=[[-1.3,1.70],[1.0,1.70],[1.0,2.75],[-1.3,2.75]]
 laundry=next(r for r in attic['rooms'] if r['id']=='laundry')
 laundry['polygon']=[[1.2,-2.75],[3.4,-2.75],[3.4,2.75],[1.2,2.75]]
 
-# Wall centre lines. The three structural room partitions are 20 cm thick in
-# the renderer below; their centre lines therefore sit exactly in the 20 cm
-# gaps between the clear room polygons. Knee walls are 10 cm thick and are
-# centred outside the usable room, leaving their inner faces at x=-3.40/3.40.
+# Wall centre lines. Structural room partitions are 20 cm thick below.
 attic['walls']=[
  [-4,-2.75,4,-2.75],
  [-4,-2.75,-4,2.75],
@@ -63,64 +60,10 @@ def mat(name,color):
 wallmat=mat('Warm lime plaster',(0.77,0.75,0.69));wood=mat('Natural oak',(0.47,0.34,0.21));tile=mat('Warm stone',(0.58,0.59,0.56));edge=mat('Cut wall cap',(0.27,0.29,0.30))
 brick=mat('Outer brick',(0.37,0.20,0.13));cavity=mat('Insulated cavity section',(0.33,0.34,0.30))
 furniture=json.loads(Path(os.environ.get('FURNITURE_INPUT',str(ROOT/'assets/blender/furniture.json'))).read_text())['items']
-
-# Final small attic placement corrections. Dimensions still come from the site
-# overrides; these adjustments only change position/rotation in the generated model.
-attic_items={str(item.get('id')):item for item in furniture if item.get('floor')=='attic'}
-item=attic_items.get('269')
-if item:
- item['rotation']=270
- item['x']=-3.4+(item['depth']/2)
- item['y']=2.75-(item['width']/2)
-item=attic_items.get('261')
-if item:
- item['x']+=.05
-item=attic_items.get('201')
-if item:
- item['x']+=.50
-
 build_furniture=runpy.run_path(str(ROOT/'assets/blender/build_furniture.py'))['build_furniture']
 custom_module=runpy.run_path(str(ROOT/'assets/blender/build_custom_furniture.py'))
 build_custom_furniture=custom_module['build_custom_furniture'];custom_kinds=custom_module['CUSTOM_KINDS']
 palette={'oak':mat('Furniture oak',(.52,.36,.22)),'fabric':mat('Warm grey upholstery',(.22,.25,.25)),'fabric_light':mat('Cushion fabric',(.38,.41,.39)),'linen':mat('Cotton linen',(.86,.84,.76)),'blue':mat('Muted blue bedding',(.21,.35,.43)),'dark':mat('Graphite',(.035,.04,.045)),'screen':mat('TV glass',(.018,.035,.05)),'ceramic':mat('Porcelain',(.88,.88,.83)),'basin':mat('Recessed basin',(.41,.47,.47)),'green':mat('Foliage',(.12,.28,.08)),'basket':mat('Woven baskets',(.48,.37,.24)),'mirror':mat('Mirror glass',(.58,.69,.74)),'stone':tile,'metal':mat('Brushed metal',(.35,.38,.4))}
-
-def add_storage_rack(objects,name,center,span,depth,rotation):
- """Open 1.80 m metal rack with 0.60 m depth and storage boxes."""
- if span<=.20:
-  return
- root=bpy.data.objects.new('furniture__attic__'+name,None)
- bpy.context.collection.objects.link(root);root.location=(*center,0);root.rotation_euler.z=math.radians(rotation)
- root['kind']='storage_rack';root['source_id']=name;objects.append(root)
- def part(label,size,pos,material,bevel=.004):
-  bpy.ops.mesh.primitive_cube_add(size=1);o=bpy.context.object;o.dimensions=size
-  bpy.ops.object.transform_apply(location=False,rotation=False,scale=True);o.name=root.name+'__'+label;o.parent=root;o.location=pos
-  if bevel:
-   mod=o.modifiers.new('Soft edges','BEVEL');mod.width=min(bevel,min(size)/4);mod.segments=2
-  o.data.materials.append(palette[material]);objects.append(o)
-  return o
- h=1.80;post=.035
- for x in [-span/2+post/2,span/2-post/2]:
-  for y in [-depth/2+post/2,depth/2-post/2]:
-   part('post',(post,post,h),(x,y,h/2),'metal')
- shelf_levels=[.04,.48,.92,1.36,1.76]
- for n,z in enumerate(shelf_levels):
-  part('shelf_'+str(n+1),(span,depth,.035),(0,0,z),'metal')
- # Cardboard-style boxes on the three middle shelves.
- for level,z in enumerate([.50,.94,1.38],1):
-  count=max(1,int(span/.42))
-  box_w=min(.34,(span-.08)/count)
-  for n in range(count):
-   x=-span/2+(n+.5)*span/count
-   part('box_'+str(level)+'_'+str(n+1),(box_w,depth*.64,.28),(x,0,z+.14),'basket',.012)
-
-def add_laundry_basket(objects,x,y):
- root=bpy.data.objects.new('furniture__attic__laundry-basket',None)
- bpy.context.collection.objects.link(root);root.location=(x,y,0);root['kind']='laundry_basket';root['source_id']='laundry-basket';objects.append(root)
- bpy.ops.mesh.primitive_cube_add(size=1);o=bpy.context.object;o.dimensions=(.30,.30,.80)
- bpy.ops.object.transform_apply(location=False,rotation=False,scale=True);o.name=root.name+'__body';o.parent=root;o.location=(0,0,.40);o.data.materials.append(palette['basket']);objects.append(o)
- # Dark open top makes the tall basket read less like a solid cabinet.
- bpy.ops.mesh.primitive_cube_add(size=1);o=bpy.context.object;o.dimensions=(.24,.24,.015)
- bpy.ops.object.transform_apply(location=False,rotation=False,scale=True);o.name=root.name+'__opening';o.parent=root;o.location=(0,0,.795);o.data.materials.append(palette['dark']);objects.append(o)
 
 for f in data['floors']:
  bpy.ops.object.select_all(action='DESELECT');objects=[]
@@ -164,32 +107,10 @@ for f in data['floors']:
  objects.extend(build_custom_furniture(furniture,f,palette))
 
  if f['id']=='attic':
-  # Z-905 must be completely black.
+  # Z-905 is intentionally completely black.
   for o in objects:
    if o.name.startswith('furniture__attic__905__') and getattr(o,'data',None) is not None and hasattr(o.data,'materials'):
     o.data.materials.clear();o.data.materials.append(palette['dark'])
-
-  # 30 x 30 x 80 cm laundry basket next to Z-903, toward Lily's wall.
-  wardrobe=attic_items.get('903')
-  if wardrobe:
-   wardrobe_bottom=wardrobe['y']-(wardrobe['width']/2)
-   basket_y=max(.75+.15,wardrobe_bottom-.15)
-   add_laundry_basket(objects,-1.5-.15,basket_y)
-
-  # Washok racks: start 10 cm after Z-273, continue around the lower perimeter,
-  # and stop 10 cm before the doorway at y=.90. Height 1.80 m, depth .60 m.
-  washer273=attic_items.get('273')
-  rack_start_y=.80
-  if washer273:
-   rack_start_y=washer273['y']-(washer273['width']/2)-.10
-  bottom=-2.75;door_stop=.80
-  right_span=rack_start_y-bottom
-  if right_span>.20:
-   add_storage_rack(objects,'washok-rack-right',(3.40-.30,(bottom+rack_start_y)/2),right_span,.60,90)
-  add_storage_rack(objects,'washok-rack-bottom',((1.20+3.40)/2,-2.75+.30),3.40-1.20,.60,0)
-  left_span=door_stop-bottom
-  if left_span>.20:
-   add_storage_rack(objects,'washok-rack-left',(1.20+.30,(bottom+door_stop)/2),left_span,.60,90)
 
  bpy.ops.object.select_all(action='DESELECT')
  for o in objects:o.select_set(True)
