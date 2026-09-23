@@ -1,7 +1,7 @@
 """Custom furniture shapes for user-measured pieces that are not in the traced source."""
 import bpy, math
 
-CUSTOM_KINDS={'hanging_desk','monitor','laptop','wardrobe_drawers','micke_desk','kobra4','skadis_filament'}
+CUSTOM_KINDS={'hanging_desk','monitor','laptop','wardrobe_drawers','micke_desk','kobra4','skadis_filament','storage_rack','laundry_basket'}
 
 def build_custom_furniture(items, floor, materials):
     objects=[]
@@ -89,8 +89,6 @@ def build_custom_furniture(items, floor, materials):
             box('drawer_handle',(.18,.025,.018),(0,d*.315,h-top-drawer/2),'metal',.003)
 
         elif k=='kobra4':
-            # Simplified open-frame Anycubic Kobra 4: base, moving bed,
-            # twin upright gantry, X rail, toolhead and front-right display.
             base_h=h*.12
             box('base',(w,d*.72,base_h),(0,d*.08,base_h/2),'ceramic',.018)
             box('bed',(w*.88,d*.78,.025),(0,d*.03,base_h+.045),'dark',.005)
@@ -108,13 +106,12 @@ def build_custom_furniture(items, floor, materials):
             box('display_glass',(w*.19,.008,h*.11),(w*.35,d*.322,base_h+.07),'screen',.003)
 
         elif k=='skadis_filament':
-            # 55 x 55 cm SKADIS-style pegboard with six visible filament rolls.
             box('pegboard',(w,d,h),(0,0,h/2),'linen',.006)
             hole=.012
             for row in range(7):
                 for col in range(7):
                     x=-w*.39+col*(w*.78/6);z=h*.10+row*(h*.80/6)
-                    box('peg_hole', (hole,.006,hole), (x,d/2+.004,z), 'dark', .001)
+                    box('peg_hole',(hole,.006,hole),(x,d/2+.004,z),'dark',.001)
             roll_radius=min(w,h)*.115
             roll_depth=.065
             positions=[(-w*.24,h*.72),(0,h*.72),(w*.24,h*.72),(-w*.24,h*.35),(0,h*.35),(w*.24,h*.35)]
@@ -122,5 +119,27 @@ def build_custom_furniture(items, floor, materials):
             for n,((x,z),colour) in enumerate(zip(positions,colours),1):
                 cylinder('filament_'+str(n),roll_radius,roll_depth,(x,d/2+roll_depth/2+.015,z),colour,(math.pi/2,0,0))
                 cylinder('spool_hub_'+str(n),roll_radius*.34,roll_depth+.008,(x,d/2+roll_depth/2+.019,z),'dark',(math.pi/2,0,0))
+
+        elif k=='storage_rack':
+            post=.035
+            for x in [-w/2+post/2,w/2-post/2]:
+                for y in [-d/2+post/2,d/2-post/2]:
+                    box('post',(post,post,h),(x,y,h/2),'metal',.003)
+            shelf_levels=[.04,h*.27,h*.52,h*.77,h-.04]
+            for n,z in enumerate(shelf_levels,1):
+                box('shelf_'+str(n),(w,d,.035),(0,0,z),'metal',.003)
+            for level,z in enumerate([h*.29,h*.54,h*.79],1):
+                count=max(1,int(w/.42))
+                box_w=min(.34,max(.18,(w-.08)/count))
+                for n in range(count):
+                    x=-w/2+(n+.5)*w/count
+                    box('box_'+str(level)+'_'+str(n+1),(box_w,d*.62,.28),(x,0,z+.14),'basket',.012)
+
+        elif k=='laundry_basket':
+            box('body',(w,d,h),(0,0,h/2),'basket',.025)
+            box('opening',(w*.78,d*.78,.015),(0,0,h-.008),'dark',.006)
+            for z in [h*.25,h*.50,h*.75]:
+                box('woven_front',(w*.84,.008,.012),(0,d/2+.005,z),'oak',.002)
+                box('woven_back',(w*.84,.008,.012),(0,-d/2-.005,z),'oak',.002)
 
     return objects
