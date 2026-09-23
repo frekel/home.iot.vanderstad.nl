@@ -51,13 +51,15 @@ brick=mat('Outer brick',(0.37,0.20,0.13));cavity=mat('Insulated cavity section',
 furniture=json.loads(Path(os.environ.get('FURNITURE_INPUT',str(ROOT/'assets/blender/furniture.json'))).read_text())['items']
 # Keep attic furniture inside the newly measured usable area. The 4.40 m room
 # is 1.4062 m narrower than the traced 5.8062 m footprint, so the open
-# wardrobe is shortened by the same amount as requested.
+# wardrobe is shortened by the same amount as requested. FurnitureLayout may
+# already have applied that correction, so only shorten legacy input here.
 for item in furniture:
  if item.get('floor')!='attic':
   continue
  item_id=str(item.get('id'))
  if item_id=='903':
-  item['width']=max(.1,item['width']-1.4062)
+  if item['width']>1.5:
+   item['width']=max(.1,item['width']-1.4062)
   item['rotation']=90
   item['x']=-1.7-(item['depth']/2)
   item['y']=2.75-(item['width']/2)
