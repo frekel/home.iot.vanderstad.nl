@@ -10,27 +10,29 @@ return new class extends Migration
         DB::transaction(function () {
             $row = DB::table('furniture_layouts')->lockForUpdate()->find(1);
             if (! $row) {
-                throw new RuntimeException('Furniture layout row not found.');
+                return;
             }
 
             $stored = json_decode($row->overrides, true, flags: JSON_THROW_ON_ERROR);
             $sinkKey = 'upper:256';
             $radiatorKey = 'upper:256-radiator';
 
-            foreach ([$sinkKey, $radiatorKey] as $key) {
-                if (! isset($stored[$key])) {
-                    throw new RuntimeException("Missing database furniture state for {$key}.");
-                }
+            // This migration was originally written after production furniture
+            // had already been materialized into overrides. A fresh database has
+            // no furniture values yet; the later furniture_items migration seeds
+            // those values directly and must be allowed to run.
+            if (! isset($stored[$sinkKey], $stored[$radiatorKey])) {
+                return;
             }
 
             foreach (['x', 'width'] as $field) {
                 if (! array_key_exists($field, $stored[$sinkKey])) {
-                    throw new RuntimeException("Missing {$field} for {$sinkKey} in the database.");
+                    return;
                 }
             }
             foreach (['width', 'depth'] as $field) {
                 if (! array_key_exists($field, $stored[$radiatorKey])) {
-                    throw new RuntimeException("Missing {$field} for {$radiatorKey} in the database.");
+                    return;
                 }
             }
 
