@@ -13,7 +13,7 @@ export const furnitureLoadError=ref('');
 let timer:ReturnType<typeof setTimeout>|undefined;
 let stopped=false;
 export async function refreshFurniture(){
- const response=await fetch('/dashboard/furniture',{headers:{Accept:'application/json'},signal:AbortSignal.timeout(15000)});
+ const response=await fetch('/dashboard/furniture',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(15000)});
  if(!response.ok)throw new Error('De meubelgegevens konden niet worden geladen.');
  furnitureState.value=await response.json(); furnitureLoadError.value='';
 }
