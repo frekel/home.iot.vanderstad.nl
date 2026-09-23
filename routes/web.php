@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'dashboard');
+Route::view('/measure', 'dashboard');
 Route::get('/dashboard/status', function (HomeyClient $homey) {
     $empty = ['connected' => false, 'devices' => [], 'access' => $homey->access([]), 'rooms' => $homey->rooms([]), 'layout' => config('homey_layout'), 'zones' => []];
     if (! $homey->configured()) {
