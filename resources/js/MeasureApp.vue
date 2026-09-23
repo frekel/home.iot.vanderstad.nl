@@ -45,7 +45,7 @@ async function refreshHomeyLabels(){
  }catch{/* Keep plan labels as fallback when Homey is unavailable. */}
 }
 
-const rooms=computed<RoomOption[]>(()=>{
+const catalogueRooms=computed<RoomOption[]>(()=>{
  const items=furnitureState.value?.items??[];
  const grouped=new Map<string,RoomOption>();
  for(const floor of house.floors){
@@ -66,17 +66,19 @@ const rooms=computed<RoomOption[]>(()=>{
  if(unknown.length)result.push({key:'unknown',id:'unknown',floor:'',label:'Plaatsing controleren',floorLabel:'Overig',items:unknown});
  return result;
 });
+const rooms=computed<RoomOption[]>(()=>catalogueRooms.value.map(r=>({...r,items:r.items.filter(i=>!measured.value.has(reference(i)))})).filter(r=>r.items.length));
 const room=computed(()=>rooms.value.find(r=>r.key===roomKey.value));
 const roomItems=computed(()=>room.value?.items??[]);
+const activeRoomAllItems=computed(()=>catalogueRooms.value.find(r=>r.key===roomKey.value)?.items??[]);
 const current=computed(()=>roomItems.value[itemIndex.value]);
-const allItems=computed(()=>rooms.value.flatMap(r=>r.items));
+const allItems=computed(()=>catalogueRooms.value.flatMap(r=>r.items));
 const processed=computed(()=>new Set([...measured.value,...skipped.value]));
 const measuredCount=computed(()=>allItems.value.filter(i=>measured.value.has(reference(i))).length);
 const skippedCount=computed(()=>allItems.value.filter(i=>skipped.value.has(reference(i))).length);
 const processedCount=computed(()=>allItems.value.filter(i=>processed.value.has(reference(i))).length);
 const remainingCount=computed(()=>Math.max(0,allItems.value.length-processedCount.value));
-const roomMeasured=computed(()=>roomItems.value.filter(i=>measured.value.has(reference(i))).length);
-const roomProcessed=computed(()=>roomItems.value.filter(i=>processed.value.has(reference(i))).length);
+const roomMeasured=computed(()=>activeRoomAllItems.value.filter(i=>measured.value.has(reference(i))).length);
+const roomProcessed=computed(()=>activeRoomAllItems.value.filter(i=>processed.value.has(reference(i))).length);
 const progress=computed(()=>allItems.value.length?Math.round(processedCount.value/allItems.value.length*100):0);
 const modelOutdated=computed(()=>!!furnitureState.value&&furnitureState.value.model_revision!==furnitureState.value.revision);
 const buildBusy=computed(()=>building.value||['queued','building'].includes(furnitureState.value?.status??''));
@@ -117,10 +119,22 @@ function previous(){
 function skip(){if(!current.value)return;setSkipped(reference(current.value));next()}
 function firstUnprocessed(){
  for(const candidateRoom of rooms.value){const index=candidateRoom.items.findIndex(i=>!processed.value.has(reference(i)));if(index>=0){roomKey.value=candidateRoom.key;itemIndex.value=index;roundFinished.value=false;return}}
- if(rooms.value.length){roomKey.value=rooms.value[rooms.value.length-1]!.key;itemIndex.value=Math.max(0,rooms.value[rooms.value.length-1]!.items.length-1);roundFinished.value=true}
+ if(rooms.value.length){roomKey.value=rooms.value[rooms.value.length-1]!.key;itemIndex.value=Math.max(0,rooms.value[rooms.value.length-1]!.items.length-1);roundFinished.value=true}else roundFinished.value=true;
+}
+function advanceAfterSave(previousRoomKey:string,previousIndex:number){
+ const catalogueIndex=catalogueRooms.value.findIndex(r=>r.key===previousRoomKey);
+ const sameRoom=rooms.value.find(r=>r.key===previousRoomKey);
+ const nextRoom=rooms.value.find(r=>catalogueRooms.value.findIndex(c=>c.key===r.key)>catalogueIndex);
+ if(sameRoom&&previousIndex<sameRoom.items.length){roomKey.value=sameRoom.key;itemIndex.value=previousIndex;roundFinished.value=false}
+ else if(nextRoom){roomKey.value=nextRoom.key;itemIndex.value=0;roundFinished.value=false}
+ else if(sameRoom){roomKey.value=sameRoom.key;itemIndex.value=Math.max(0,sameRoom.items.length-1);roundFinished.value=false}
+ else if(rooms.value.length){roomKey.value=rooms.value[0]!.key;itemIndex.value=0;roundFinished.value=false}
+ else roundFinished.value=true;
+ window.scrollTo({top:0,left:0,behavior:'smooth'});
 }
 async function saveAndNext(){
  const item=current.value,state=furnitureState.value;if(!item||!state||saving.value)return;
+ const previousRoomKey=roomKey.value,previousIndex=itemIndex.value;
  const values={} as Record<Dimension,number>;
  for(const key of ['width','depth','height'] as Dimension[]){const value=Number(form.value[key]);if(!Number.isFinite(value)||value<limits[key].min||value>limits[key].max){error.value=`${key==='width'?'Breedte':key==='depth'?'Diepte':'Hoogte'} moet tussen ${limits[key].min} en ${limits[key].max} cm liggen.`;return}values[key]=value}
  saving.value=true;error.value='';notice.value='';
@@ -128,7 +142,7 @@ async function saveAndNext(){
   const response=await fetch('/dashboard/furniture',{method:'PUT',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf()},body:JSON.stringify({revision:state.revision,items:[{floor:item.floor,id:item.id,width:values.width,depth:values.depth,height:values.height,base_z:Number(cm(item.base_z))}]}),signal:AbortSignal.timeout(20000)});
   const data=await response.json();
   if(!response.ok)throw new Error(response.status===409?'De meubelgegevens zijn ondertussen gewijzigd. Herlaad de meetmodus en probeer opnieuw.':data.errors?Object.values(data.errors).flat().join(' '):data.message??'Opslaan mislukt.');
-  furnitureState.value=data as FurnitureState;setMeasured(reference(item));next();
+  furnitureState.value=data as FurnitureState;setMeasured(reference(item));advanceAfterSave(previousRoomKey,previousIndex);
  }catch(e){error.value=e instanceof Error?e.message:'Opslaan mislukt. Controleer de verbinding.'}finally{saving.value=false}
 }
 async function build(){
@@ -167,18 +181,17 @@ onMounted(async()=>{loadProgress();try{await Promise.all([refreshFurniture(),ref
 
   <template v-else-if="current && room">
    <section class="measure-roombar">
-    <label>Kamer<select v-model="roomKey" @change="chooseRoom"><option v-for="r in rooms" :key="r.key" :value="r.key">{{r.floorLabel}} · {{r.label}} ({{r.items.length}})</option></select></label>
-    <div><strong>{{roomMeasured}} / {{roomItems.length}}</strong><span>gemeten in deze kamer</span></div>
+    <label>Kamer<select v-model="roomKey" @change="chooseRoom"><option v-for="r in rooms" :key="r.key" :value="r.key">{{r.floorLabel}} · {{r.label}} ({{r.items.length}} open)</option></select></label>
+    <div><strong>{{roomMeasured}} / {{activeRoomAllItems.length}}</strong><span>gemeten in deze kamer</span></div>
    </section>
 
    <section class="measure-card">
     <div class="measure-card-top">
      <div><span class="measure-reference">{{reference(current)}}</span><h2>{{label(current)}}</h2><p>{{room.floorLabel}} · {{room.label}}</p></div>
-     <span class="measure-counter">{{itemIndex+1}} / {{roomItems.length}}</span>
+     <span class="measure-counter">{{itemIndex+1}} / {{roomItems.length}} open</span>
     </div>
     <div class="measure-state-row">
-     <span v-if="measured.has(reference(current))" class="measured"><Check :size="15"/>Al gemeten</span>
-     <span v-else-if="skipped.has(reference(current))" class="skipped"><SkipForward :size="15"/>Eerder overgeslagen</span>
+     <span v-if="skipped.has(reference(current))" class="skipped"><SkipForward :size="15"/>Eerder overgeslagen</span>
      <span v-else>Nog niet gemeten</span>
     </div>
 
@@ -186,7 +199,7 @@ onMounted(async()=>{loadProgress();try{await Promise.all([refreshFurniture(),ref
      <div class="measure-map-caption"><span>{{room.label}}</span><strong><i/> {{reference(current)}} is het oranje meubel</strong></div>
      <svg :viewBox="roomMapViewBox" preserveAspectRatio="xMidYMid meet" role="img" :aria-label="`${room.label}: ${reference(current)} ${label(current)} gemarkeerd`">
       <polygon v-for="(polygon,index) in roomMapPolygons" :key="index" class="measure-map-room" :points="polygon.map(p=>p.join(',')).join(' ')"/>
-      <polygon v-for="item in roomItems" :key="reference(item)" class="measure-map-furniture" :class="{current:reference(item)===reference(current)}" :points="footprint(item)"><title>{{reference(item)}} · {{label(item)}}</title></polygon>
+      <polygon v-for="item in activeRoomAllItems" :key="reference(item)" class="measure-map-furniture" :class="{current:reference(item)===reference(current)}" :points="footprint(item)"><title>{{reference(item)}} · {{label(item)}}</title></polygon>
      </svg>
     </div>
 
@@ -203,12 +216,12 @@ onMounted(async()=>{loadProgress();try{await Promise.all([refreshFurniture(),ref
 
    <nav class="measure-nav" aria-label="Meubelnavigatie">
     <button :disabled="rooms.findIndex(r=>r.key===roomKey)===0&&itemIndex===0" @click="previous"><ChevronLeft :size="20"/>Vorige</button>
-    <span>{{roomProcessed}} / {{roomItems.length}} verwerkt</span>
+    <span>{{roomProcessed}} / {{activeRoomAllItems.length}} verwerkt</span>
     <button @click="next">Volgende<ChevronRight :size="20"/></button>
    </nav>
   </template>
 
-  <section v-else class="measure-card measure-loading"><House :size="24"/>Geen meubels gevonden.</section>
+  <section v-else class="measure-card measure-loading"><House :size="24"/>Geen ongemeten meubels gevonden.</section>
 
   <section v-if="!loading && allItems.length" class="measure-progress-card measure-progress-bottom">
    <div class="measure-progress-copy"><strong>{{measuredCount}} gemeten</strong><span v-if="skippedCount">· {{skippedCount}} overgeslagen</span><span>· {{allItems.length}} totaal</span></div>
