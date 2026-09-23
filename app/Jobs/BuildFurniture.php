@@ -23,8 +23,9 @@ class BuildFurniture implements ShouldQueue
 
     public function __construct(public int $revision) {}
 
-    public function handle(FurnitureLayout $layout, HouseLayout $house): void
+    public function handle(FurnitureLayout $layout, ?HouseLayout $house = null): void
     {
+        $house ??= app(HouseLayout::class);
         $row = DB::table('furniture_layouts')->find(1);
         if ((int) $row->revision !== $this->revision || $row->status === 'ready') {
             return;
