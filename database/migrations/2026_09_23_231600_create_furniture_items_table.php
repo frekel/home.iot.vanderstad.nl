@@ -94,6 +94,11 @@ return new class extends Migration
                 unset($metadata['group'], $metadata['group_name']);
             }
 
+            // Z-905's all-black appearance is item data, not renderer logic.
+            if ($item['floor'] === 'attic' && (string) $item['id'] === '905') {
+                $metadata['material_override'] = 'dark';
+            }
+
             DB::table('furniture_items')->insert([
                 'floor_id' => $item['floor'],
                 'item_id' => (string) $item['id'],
