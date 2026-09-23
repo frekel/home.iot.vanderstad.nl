@@ -8,6 +8,13 @@ ROOT=Path(__file__).resolve().parents[2]
 OUTPUT=Path(os.environ.get('FURNITURE_OUTPUT',str(ROOT/'public/models')))
 OUTPUT.mkdir(parents=True,exist_ok=True)
 data=json.loads((ROOT/'resources/js/house.json').read_text())
+# User-measured correction: opposite the first-floor stairs the wall between
+# the two bedroom doors is 63 cm wide. Preserve its original centre point.
+upper=next(f for f in data['floors'] if f['id']=='upper')
+for wall in upper['walls']:
+ if all(abs(a-b)<.0001 for a,b in zip(wall,[-.2326,.2292,.1628,.2292])):
+  wall[:]=[-.3499,.2292,.2801,.2292]
+  break
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.context.scene.unit_settings.system='METRIC'
 def mat(name,color):
