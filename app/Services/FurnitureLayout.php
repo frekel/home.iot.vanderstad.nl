@@ -65,6 +65,9 @@ class FurnitureLayout
 
     public function items(array $overrides, bool $render = false): array
     {
+        // Saved measurements from the site are applied first. Everything below
+        // only changes placement/rotation, so a freshly measured cabinet keeps
+        // its exact dimensions when the floorplan is rebuilt.
         $items = array_map(function ($item) use ($overrides, $render) {
             $dimensions = array_intersect_key($item, array_flip(['width', 'depth', 'height']));
             $item = array_replace($item, $overrides[$item['floor'].':'.$item['id']] ?? []);
@@ -109,14 +112,28 @@ class FurnitureLayout
             }
         }
 
-        // Lily's bed Z-191 is rotated 90 degrees and sits exactly in the
-        // lower-right corner of her attic bedroom. Z-261 is against the foot;
-        // Z-201 follows the cabinet but is no longer grouped with either item.
+        // Final attic clear-wall coordinates:
+        // x -3.40 = left knee wall, x 1.00 = Lily/Zolder side of Washok wall,
+        // x 1.20..3.40 = Washok, y .55/.75 = the 20 cm Lily partition,
+        // x -1.50/-1.30 = the 20 cm closet/Zolder partition.
+        $leftKnee = -3.40;
+        $roomRight = 1.00;
+        $washokLeft = 1.20;
+        $washokRight = 3.40;
+        $lilyBottom = -2.75;
+        $lilyTop = .55;
+        $upperBottom = .75;
+        $top = 2.75;
+        $closetRight = -1.50;
+
+        // Lily: bed in the lower-right corner, with Z-261 directly against the
+        // foot. Z-201 stays aligned with the cabinet but all three remain
+        // independent items (their old group is removed in baseline()).
         $lilyBedIndex = $find('191', 'attic');
         if ($lilyBedIndex !== false) {
             $items[$lilyBedIndex]['rotation'] = 90;
-            $items[$lilyBedIndex]['x'] = 1.8 - ($items[$lilyBedIndex]['depth'] / 2);
-            $items[$lilyBedIndex]['y'] = -2.75 + ($items[$lilyBedIndex]['width'] / 2);
+            $items[$lilyBedIndex]['x'] = $roomRight - ($items[$lilyBedIndex]['depth'] / 2);
+            $items[$lilyBedIndex]['y'] = $lilyBottom + ($items[$lilyBedIndex]['width'] / 2);
             $bedFootX = $items[$lilyBedIndex]['x'] - ($items[$lilyBedIndex]['depth'] / 2);
 
             $cabinetIndex = $find('261', 'attic');
@@ -137,94 +154,124 @@ class FurnitureLayout
             }
         }
 
-        // Snap fixed attic furniture to the measured room walls. The new knee
-        // wall at x=-2.60 defines Lily's 4.40 m usable bedroom width.
         $mirror = $find('193', 'attic');
         if ($mirror !== false) {
-            $items[$mirror]['y'] = 0.1807 - ($items[$mirror]['depth'] / 2);
+            $items[$mirror]['rotation'] = 180;
+            $items[$mirror]['y'] = $lilyTop - ($items[$mirror]['depth'] / 2);
         }
 
         $armchair = $find('259', 'attic');
         if ($armchair !== false) {
             $items[$armchair]['rotation'] = 270;
-            $items[$armchair]['x'] = -2.6 + ($items[$armchair]['depth'] / 2);
-            $items[$armchair]['y'] = -2.75 + ($items[$armchair]['width'] / 2);
+            $items[$armchair]['x'] = $leftKnee + ($items[$armchair]['depth'] / 2);
+            $items[$armchair]['y'] = $lilyBottom + ($items[$armchair]['width'] / 2);
         }
 
         $sideTable = $find('260', 'attic');
         if ($sideTable !== false) {
             $items[$sideTable]['rotation'] = 270;
-            $items[$sideTable]['x'] = -2.6 + ($items[$sideTable]['depth'] / 2);
+            $items[$sideTable]['x'] = $leftKnee + ($items[$sideTable]['depth'] / 2);
+            $items[$sideTable]['y'] = min($lilyTop - ($items[$sideTable]['width'] / 2), max($lilyBottom + ($items[$sideTable]['width'] / 2), $items[$sideTable]['y']));
         }
 
         $desk = $find('263', 'attic');
         if ($desk !== false) {
             $items[$desk]['rotation'] = 270;
-            $items[$desk]['x'] = 1.8 - ($items[$desk]['depth'] / 2);
+            $items[$desk]['x'] = $roomRight - ($items[$desk]['depth'] / 2);
+            $items[$desk]['y'] = min($lilyTop - ($items[$desk]['width'] / 2), max($lilyBottom + ($items[$desk]['width'] / 2), $items[$desk]['y']));
+
             $computer = $find('264', 'attic');
             if ($computer !== false) {
                 $items[$computer]['x'] = $items[$desk]['x'];
                 $items[$computer]['y'] = $items[$desk]['y'];
+            }
+
+            $chair = $find('262', 'attic');
+            if ($chair !== false) {
+                $items[$chair]['rotation'] = 270;
+                $items[$chair]['x'] = $items[$desk]['x'] - ($items[$desk]['depth'] / 2) - ($items[$chair]['depth'] / 2) - .15;
+                $items[$chair]['y'] = $items[$desk]['y'];
             }
         }
 
         $infrared = $find('905', 'attic');
         if ($infrared !== false) {
             $items[$infrared]['rotation'] = 270;
-            $items[$infrared]['x'] = -2.6 + ($items[$infrared]['depth'] / 2);
+            $items[$infrared]['x'] = $leftKnee + ($items[$infrared]['depth'] / 2);
+            $items[$infrared]['y'] = min($lilyTop - ($items[$infrared]['width'] / 2), max($lilyBottom + ($items[$infrared]['width'] / 2), $items[$infrared]['y']));
         }
 
+        // Kledingkast room (1.90 x 2.00 m). Dimensions are never altered here;
+        // a saved measurement from the site remains authoritative.
         $zolderTable = $find('269', 'attic');
         if ($zolderTable !== false) {
-            $items[$zolderTable]['y'] = 2.75 - ($items[$zolderTable]['depth'] / 2);
+            $items[$zolderTable]['rotation'] = 180;
+            $items[$zolderTable]['x'] = ($leftKnee + $closetRight) / 2;
+            $items[$zolderTable]['y'] = $top - ($items[$zolderTable]['depth'] / 2);
+
+            $zolderChair = $find('268', 'attic');
+            if ($zolderChair !== false) {
+                $items[$zolderChair]['rotation'] = 0;
+                $items[$zolderChair]['x'] = $items[$zolderTable]['x'];
+                $items[$zolderChair]['y'] = $items[$zolderTable]['y'] - ($items[$zolderTable]['depth'] / 2) - ($items[$zolderChair]['depth'] / 2) - .10;
+            }
         }
 
         $basket = $find('271', 'attic');
         if ($basket !== false) {
             $items[$basket]['rotation'] = 270;
-            $items[$basket]['x'] = -4.0 + ($items[$basket]['depth'] / 2);
-            $items[$basket]['y'] = 0.75 + ($items[$basket]['width'] / 2);
+            $items[$basket]['x'] = $leftKnee + ($items[$basket]['depth'] / 2);
+            $items[$basket]['y'] = $upperBottom + ($items[$basket]['width'] / 2);
         }
 
         $wardrobe = $find('903', 'attic');
         if ($wardrobe !== false) {
-            // The usable attic-bedroom width changed from 5.8062 m to 4.40 m.
-            // Shorten the wardrobe by the same 1.4062 m, but do not apply the
-            // correction twice if a future saved measurement is already short.
-            if ($items[$wardrobe]['width'] > 1.5) {
-                $items[$wardrobe]['width'] = max(.10, $items[$wardrobe]['width'] - 1.4062);
-            }
             $items[$wardrobe]['rotation'] = 90;
-            $items[$wardrobe]['x'] = -1.7 - ($items[$wardrobe]['depth'] / 2);
-            $items[$wardrobe]['y'] = 2.75 - ($items[$wardrobe]['width'] / 2);
+            $items[$wardrobe]['x'] = $closetRight - ($items[$wardrobe]['depth'] / 2);
+            $items[$wardrobe]['y'] = $top - ($items[$wardrobe]['width'] / 2);
         }
 
+        // Zolder/trap room is 2.30 x 2.00 m. The old stair placeholder was
+        // wider than the measured room; only use the room width as a fallback
+        // when the stair itself has never been measured on the site.
+        $stairs = $find('904', 'attic');
+        if ($stairs !== false) {
+            if (! isset($overrides['attic:904']['width'])) {
+                $items[$stairs]['width'] = 2.30;
+            }
+            $items[$stairs]['rotation'] = 0;
+            $items[$stairs]['x'] = -.15;
+            $items[$stairs]['y'] = $top - ($items[$stairs]['depth'] / 2);
+        }
+
+        // Washok is 5.50 x 2.20 m between x=1.20 and x=3.40. Keep all
+        // appliances against actual room walls and use their saved dimensions.
         $washer1 = $find('272', 'attic');
         if ($washer1 !== false) {
             $items[$washer1]['rotation'] = 90;
-            $items[$washer1]['x'] = 4.0 - ($items[$washer1]['depth'] / 2);
-            $items[$washer1]['y'] = 2.75 - ($items[$washer1]['width'] / 2);
+            $items[$washer1]['x'] = $washokRight - ($items[$washer1]['depth'] / 2);
+            $items[$washer1]['y'] = $top - ($items[$washer1]['width'] / 2);
         }
         $washer2 = $find('273', 'attic');
         if ($washer2 !== false) {
             $items[$washer2]['rotation'] = 90;
-            $items[$washer2]['x'] = 4.0 - ($items[$washer2]['depth'] / 2);
+            $items[$washer2]['x'] = $washokRight - ($items[$washer2]['depth'] / 2);
             $items[$washer2]['y'] = $washer1 !== false
-                ? $items[$washer1]['y'] - $items[$washer1]['width']
+                ? $items[$washer1]['y'] - ($items[$washer1]['width'] / 2) - ($items[$washer2]['width'] / 2)
                 : 1.45;
         }
 
         $boiler = $find('906', 'attic');
         if ($boiler !== false) {
-            $items[$boiler]['x'] = 1.8 + ($items[$boiler]['width'] / 2);
-            $items[$boiler]['y'] = 2.75 - ($items[$boiler]['depth'] / 2);
+            $items[$boiler]['x'] = $washokLeft + ($items[$boiler]['width'] / 2);
+            $items[$boiler]['y'] = $top - ($items[$boiler]['depth'] / 2);
         }
         $heating = $find('907', 'attic');
         if ($heating !== false) {
-            $items[$heating]['y'] = 2.75 - ($items[$heating]['depth'] / 2);
+            $items[$heating]['y'] = $top - ($items[$heating]['depth'] / 2);
             $items[$heating]['x'] = $boiler !== false
-                ? $items[$boiler]['x'] + ($items[$boiler]['width'] / 2) + ($items[$heating]['width'] / 2)
-                : 2.48;
+                ? min($washokRight - ($items[$heating]['width'] / 2), $items[$boiler]['x'] + ($items[$boiler]['width'] / 2) + ($items[$heating]['width'] / 2))
+                : $washokLeft + ($items[$heating]['width'] / 2);
         }
 
         return $items;
