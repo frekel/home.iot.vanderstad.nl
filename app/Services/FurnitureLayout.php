@@ -11,6 +11,23 @@ class FurnitureLayout
     public function baseline(): array
     {
         $items = json_decode(file_get_contents(base_path('assets/blender/furniture.json')), true, flags: JSON_THROW_ON_ERROR)['items'];
+
+        // User-measured first-floor furniture opposite the stairs, centred on
+        // the 63 cm wall between the two bedroom doors.
+        $items[] = [
+            'id' => '257', 'floor' => 'upper', 'kind' => 'cabinet',
+            'x' => -0.0349, 'y' => 0.4492,
+            'width' => 0.71, 'depth' => 0.34, 'height' => 0.87,
+            'rotation' => 0, 'source_shape' => 'dresser', 'measured' => true,
+        ];
+        $items[] = [
+            'id' => '258', 'floor' => 'upper', 'kind' => 'tv',
+            'x' => -0.0349, 'y' => 0.3292,
+            'width' => 0.62, 'depth' => 0.10, 'height' => 0.40,
+            'rotation' => 0, 'source_shape' => 'flat_tv',
+            'base_z' => 0.87, 'standing' => true, 'measured' => true,
+        ];
+
         foreach ($items as &$item) {
             $item['base_z'] ??= match ($item['kind']) {
                 'tv' => .9, 'computer' => .78, default => 0
@@ -93,7 +110,6 @@ class FurnitureLayout
             DB::table('furniture_layouts')->where('id', 1)->update([
                 'status' => 'queued', 'started_at' => null, 'updated_at' => now(),
             ]);
-            BuildFurniture::dispatch($revision)->onConnection('furniture')->onQueue('furniture');
         });
 
         return $this->state();
