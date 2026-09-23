@@ -64,11 +64,18 @@ for f in data['floors']:
  objects.extend(build_furniture(regular,f,palette))
  objects.extend(build_custom_furniture(furniture,f,palette))
 
- if f['id']=='attic':
-  # Z-905 is intentionally completely black.
+ # Item-specific appearance is data. Blender only applies a generic palette key
+ # supplied by furniture metadata; it never checks a particular furniture ID.
+ for item in furniture:
+  if item['floor']!=f['id'] or not item.get('material_override'):
+   continue
+  material=palette.get(item['material_override'])
+  if material is None:
+   raise RuntimeError(f"Unknown furniture material override: {item['material_override']}")
+  prefix=f"furniture__{f['id']}__{item['id']}__"
   for o in objects:
-   if o.name.startswith('furniture__attic__905__') and getattr(o,'data',None) is not None and hasattr(o.data,'materials'):
-    o.data.materials.clear();o.data.materials.append(palette['dark'])
+   if o.name.startswith(prefix) and getattr(o,'data',None) is not None and hasattr(o.data,'materials'):
+    o.data.materials.clear();o.data.materials.append(material)
 
  bpy.ops.object.select_all(action='DESELECT')
  for o in objects:o.select_set(True)
