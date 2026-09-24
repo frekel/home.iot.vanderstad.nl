@@ -76,7 +76,9 @@ for f in data['floors']:
  objects.extend(build_custom_furniture(furniture,f,palette))
 
  # Item-specific appearance is data. A user-defined hex colour takes priority
- # over the generic material palette override.
+ # over the generic material palette override. Composite pieces can keep their
+ # own accent/detail colours: for Skadis filament boards the chosen colour
+ # applies to the board only, while holes, spool hubs and filament stay intact.
  for item in furniture:
   if item['floor']!=f['id']:
    continue
@@ -91,8 +93,11 @@ for f in data['floors']:
    continue
   prefix=f"furniture__{f['id']}__{item['id']}__"
   for o in objects:
-   if o.name.startswith(prefix) and getattr(o,'data',None) is not None and hasattr(o.data,'materials'):
-    o.data.materials.clear();o.data.materials.append(material)
+   if not (o.name.startswith(prefix) and getattr(o,'data',None) is not None and hasattr(o.data,'materials')):
+    continue
+   if item.get('color') and item.get('model_kind')=='skadis_filament' and not o.name.endswith('__pegboard'):
+    continue
+   o.data.materials.clear();o.data.materials.append(material)
 
  bpy.ops.object.select_all(action='DESELECT')
  for o in objects:o.select_set(True)
