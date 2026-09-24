@@ -10,7 +10,7 @@ defineEmits<{close:[]}>();
 const floor=ref(props.initialFloor),selected=ref('');
 const prefixes:Record<string,string>={ground:'BG',upper:'V1',attic:'Z'};
 const floorNames:Record<string,string>={ground:'Begane grond',upper:'Eerste verdieping',attic:'Zolder'};
-const names:Record<string,string>={sofa:'Bank',armchair:'Fauteuil',cabinet:'Kast',corner_sofa:'Hoekbank',split_door_cabinet:'Kast · deuren 60 / 40 cm',open_shelving:'Open plankenkast',dog_house:'Hondenhok',wall_cabinet_set:'Drie hangkastjes van 60 cm',american_fridge:'Amerikaanse koelkast',shoe_rack:'Schoenenrek',breakfast_bar:'Bar op BG-53',wall_shelf:'Wandplank',drawer_cabinet:'Ladekastje',rotating_mirror_cabinet:'Draaikast met spiegel',bed:'Bed',tv:'Tv',chair:'Stoel',fridge:'Koelkast',cooker:'Fornuis',sink:'Spoelbak / wastafel',toilet:'Toilet',bath:'Bad',plant:'Plant',computer:'Computer',table:'Tafel / bureau',washer:'Wasmachine / droger',open_wardrobe:'Open kledingkast · half hangen / half planken',winder_stairs:'Halfslagtrap · 180°',projector_screen:'Beamerscherm',shower:'Douche met halfrond gordijn',water_heater:'Boiler',heating_boiler:'Cv-ketel',infrared_panel:'Infraroodpaneel',mirror:'Wandspiegel',basket_cabinet:'Ladekast met mandjes'};
+const names:Record<string,string>={sofa:'Bank',armchair:'Fauteuil',cabinet:'Kast',corner_sofa:'Hoekbank',split_door_cabinet:'Kast · deuren 60 / 40 cm',open_shelving:'Open plankenkast',dog_house:'Hondenhok',wall_cabinet_set:'Drie hangkastjes van 60 cm',american_fridge:'Amerikaanse koelkast',shoe_rack:'Schoenenrek',breakfast_bar:'Bar op BG-53',wall_shelf:'Wandplank',drawer_cabinet:'Ladekastje',rotating_mirror_cabinet:'Draaikast met spiegel',bed:'Bed',tv:'Tv',chair:'Stoel',fridge:'Koelkast',cooker:'Fornuis',sink:'Spoelbak / wastafel',toilet:'Toilet',bath:'Bad',plant:'Plant',computer:'Computer',table:'Tafel / bureau',washer:'Wasmachine / droger',open_wardrobe:'Open kledingkast · half hangen / half planken',winder_stairs:'Halfslagtrap · 180°',projector_screen:'Beamerscherm',shower:'Douche met halfrond gordijn',water_heater:'Boiler',heating_boiler:'Cv-ketel',infrared_panel:'Infraroodpaneel',mirror:'Wandspiegel',basket_cabinet:'Ladekast met mandjes',trash_bin:'Prullenbak',countertop:'Keukenblad'};
 type Item=FurnitureItem;
 function reference(i:Item){return `${prefixes[i.floor]}-${i.id==='levi-tv-cabinet'?'901':i.id==='levi-tv'?'902':i.id}`}
 function label(i:Item){if(i.kind==='wall_cabinet_set')return `Drie hangkastjes · elk ${Math.round(i.width*100/3)} cm breed`;if(i.kind==='split_door_cabinet')return `Kast · deuren ${Math.round(i.width*60)} / ${Math.round(i.width*40)} cm`;return i.id==='levi-tv-cabinet'?'Kast aan voeteneinde V1-244':i.id==='levi-tv'?'Levi · tv aan muur':names[i.kind]??i.kind}
@@ -79,25 +79,39 @@ watch(()=>[floor.value,furnitureState.value?.models[floor.value],furnitureState.
 onBeforeUnmount(()=>{footprintRequest++});
 function choose(i:Item){selected.value=reference(i);document.getElementById('furniture-'+reference(i))?.scrollIntoView({block:'nearest',behavior:'smooth'})}
 function dimensions(i:Item){return [i.width,i.depth,i.height].map(v=>Math.round(v*100)).join(' × ')+' cm'}
-type Dimension='width'|'depth'|'height'|'base_z';
-const fields:{key:Dimension;label:string;min:number;max:number}[]=[{key:'width',label:'Breedte',min:5,max:1100},{key:'depth',label:'Diepte',min:1,max:550},{key:'height',label:'Hoogte',min:1,max:400},{key:'base_z',label:'Onderkant vanaf vloer',min:0,max:300}];
-const drafts=ref<Record<string,Record<Dimension,string>>>({});
+type NumericField='width'|'depth'|'height'|'x'|'y'|'base_z';
+type Draft=Record<NumericField,string>&{color:string};
+const dimensionFields:{key:NumericField;label:string;min:number;max:number}[]=[{key:'width',label:'Breedte',min:5,max:1100},{key:'depth',label:'Diepte',min:1,max:550},{key:'height',label:'Hoogte',min:1,max:400}];
+const positionFields:{key:NumericField;label:string;min:number;max:number}[]=[{key:'x',label:'X-as',min:-2000,max:2000},{key:'y',label:'Y-as',min:-2000,max:2000},{key:'base_z',label:'Z-as',min:0,max:500}];
+const fields=[...dimensionFields,...positionFields];
+const drafts=ref<Record<string,Draft>>({});
 const editRevision=ref<number>();
 const saving=ref(false),building=ref(false),saveError=ref(''),notice=ref('');
 const busy=computed(()=>saving.value||building.value||['queued','building'].includes(furnitureState.value?.status??''));
 const changed=computed(()=>(furnitureState.value?.items??[]).filter(i=>drafts.value[reference(i)]));
 const modelOutdated=computed(()=>!!furnitureState.value&&furnitureState.value.model_revision!==furnitureState.value.revision);
-const buildMessage=computed(()=>{if(building.value)return 'Plattegrond starten…';switch(furnitureState.value?.status){case 'queued':return 'Wachten op opbouw…';case 'building':return 'Plattegrond wordt opgebouwd. Het vorige model blijft zichtbaar.';case 'failed':return 'Opbouwen mislukt. Je maten zijn opgeslagen; het vorige model blijft zichtbaar.';default:return notice.value}});
-function value(i:Item,key:Dimension){return drafts.value[reference(i)]?.[key]??String(Math.round(i[key]*100000)/1000)}
-function edit(i:Item,key:Dimension,event:Event){if(editRevision.value===undefined)editRevision.value=furnitureState.value?.revision;const id=reference(i);drafts.value[id]??=Object.fromEntries(fields.map(f=>[f.key,value(i,f.key)])) as Record<Dimension,string>;drafts.value[id][key]=(event.target as HTMLInputElement).value;saveError.value='';notice.value=''}
+const buildMessage=computed(()=>{if(building.value)return 'Plattegrond starten…';switch(furnitureState.value?.status){case 'queued':return 'Wachten op opbouw…';case 'building':return 'Plattegrond wordt opgebouwd. Het vorige model blijft zichtbaar.';case 'failed':return 'Opbouwen mislukt. Je gegevens zijn opgeslagen; het vorige model blijft zichtbaar.';default:return notice.value}});
+function value(i:Item,key:NumericField){return drafts.value[reference(i)]?.[key]??String(Math.round(i[key]*100000)/1000)}
+function ensureDraft(i:Item){const id=reference(i);if(editRevision.value===undefined)editRevision.value=furnitureState.value?.revision;if(!drafts.value[id])drafts.value[id]={...Object.fromEntries(fields.map(f=>[f.key,value(i,f.key)])),color:i.color??''} as Draft;return drafts.value[id]!}
+function edit(i:Item,key:NumericField,event:Event){ensureDraft(i)[key]=(event.target as HTMLInputElement).value;saveError.value='';notice.value=''}
+function pickerColor(i:Item){return drafts.value[reference(i)]?.color||i.color||'#8b7355'}
+function editColor(i:Item,event:Event){ensureDraft(i).color=(event.target as HTMLInputElement).value.toLowerCase();saveError.value='';notice.value=''}
+function clearColor(i:Item){ensureDraft(i).color='';saveError.value='';notice.value=''}
 function discard(){drafts.value={};editRevision.value=undefined;saveError.value='';notice.value='';void refreshFurniture().catch(()=>{})}
 function csrf(){return document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content??''}
 async function save(){
  if(!furnitureState.value||busy.value||!changed.value.length)return;
  const updates=[];
- for(const item of changed.value){const dimensions={} as Record<Dimension,number>;for(const field of fields){const raw=value(item,field.key),number=Number(raw);if(raw.trim()===''||!Number.isFinite(number)||number<field.min||number>field.max){saveError.value=`${reference(item)}: ${field.label} moet tussen ${field.min} en ${field.max} cm liggen.`;return}dimensions[field.key]=number}updates.push({floor:item.floor,id:item.id,...dimensions})}
+ for(const item of changed.value){
+  const numeric={} as Record<NumericField,number>;
+  for(const field of fields){const raw=value(item,field.key),number=Number(raw);if(raw.trim()===''||!Number.isFinite(number)||number<field.min||number>field.max){saveError.value=`${reference(item)}: ${field.label} moet tussen ${field.min} en ${field.max} cm liggen.`;return}numeric[field.key]=number}
+  if(numeric.height+numeric.base_z>500){saveError.value=`${reference(item)}: hoogte + Z-as mag maximaal 500 cm zijn.`;return}
+  const color=drafts.value[reference(item)]?.color??item.color??'';
+  if(color&&!/^#[0-9a-f]{6}$/i.test(color)){saveError.value=`${reference(item)}: ongeldige kleur.`;return}
+  updates.push({floor:item.floor,id:item.id,...numeric,color:color||null});
+ }
  saving.value=true;saveError.value='';notice.value='';
- try{const response=await fetch('/dashboard/furniture',{method:'PUT',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf()},body:JSON.stringify({revision:editRevision.value??furnitureState.value.revision,items:updates}),signal:AbortSignal.timeout(20000)});const data=await response.json();if(!response.ok)throw new Error(data.errors?Object.values(data.errors).flat().join(' '):data.message??'Opslaan mislukt.');furnitureState.value=data;drafts.value={};editRevision.value=undefined;notice.value='Maten opgeslagen. Werk de plattegrond bij wanneer je klaar bent met wijzigen.'}
+ try{const response=await fetch('/dashboard/furniture',{method:'PUT',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf()},body:JSON.stringify({revision:editRevision.value??furnitureState.value.revision,items:updates}),signal:AbortSignal.timeout(20000)});const data=await response.json();if(!response.ok)throw new Error(data.errors?Object.values(data.errors).flat().join(' '):data.message??'Opslaan mislukt.');furnitureState.value=data;drafts.value={};editRevision.value=undefined;notice.value='Afmetingen, positie en kleur opgeslagen. Werk de plattegrond bij wanneer je klaar bent met wijzigen.'}
  catch(error){saveError.value=error instanceof Error?error.message:'Opslaan mislukt. Controleer de verbinding en probeer opnieuw.'}finally{saving.value=false}
 }
 async function build(){
@@ -110,7 +124,7 @@ async function build(){
 <template>
 <div class="modal-backdrop furniture-backdrop" @click.self="!changed.length && $emit('close')"><section class="furniture-catalogue" role="dialog" aria-modal="true" aria-labelledby="furniture-title">
  <button class="icon-button close" aria-label="Meubeloverzicht sluiten" :disabled="!!changed.length" @click="$emit('close')"><X :size="20"/></button>
- <h2 id="furniture-title">Meubels wijzigen</h2><p>Selecteer een meubel, pas de maten in centimeters aan en sla je wijzigingen op. Werk de 3D-plattegrond pas bij wanneer je klaar bent.</p>
+ <h2 id="furniture-title">Meubels wijzigen</h2><p>Selecteer een meubel, pas afmetingen, positie en kleur aan en sla je wijzigingen op. Werk de 3D-plattegrond pas bij wanneer je klaar bent.</p>
  <div class="furniture-savebar">
  <button class="primary" :disabled="busy || !furnitureState || !changed.length" @click="save">{{saving?'Opslaan…':'Wijzigingen opslaan'}}{{changed.length?' ('+changed.length+')':''}}</button>
  <button :disabled="busy || !furnitureState || !!changed.length || (!modelOutdated && furnitureState.status!=='failed')" @click="build">{{building?'Starten…':furnitureState?.status==='failed'?'Opnieuw opbouwen':'Plattegrond bijwerken'}}</button>
@@ -127,8 +141,12 @@ async function build(){
   <g v-for="m in markers" :key="m.item.id" role="button" tabindex="0" :aria-label="`${reference(m.item)} ${label(m.item)}`" @click="choose(m.item)" @keydown.enter.prevent="choose(m.item)" @keydown.space.prevent="choose(m.item)" style="cursor:pointer"><circle :cx="m.x" :cy="m.y" r=".19" :fill="isSelected(m.item)?'#ff8a18':'#131b24'" stroke="#ffaf59" stroke-width=".017"/><text :x="m.x" :y="m.y+.047" text-anchor="middle" font-size=".135" :fill="isSelected(m.item)?'#101419':'#fff'">{{reference(m.item).split('-')[1]}}</text></g>
  </svg>
  <p>Kaartnummers beginnen met <strong>{{prefixes[floor]}}-</strong>. De kaart volgt de spiegeling van de 3D-plattegrond.</p>
- <div class="furniture-selection" aria-live="polite"><template v-if="chosen"><strong>{{reference(chosen)}} · {{label(chosen)}}</strong><p>{{room(chosen)}} · {{dimensions(chosen)}}</p><p v-if="chosen.group"><strong>{{chosen.group}} · {{chosen.group_name}}</strong> — {{items.filter(i=>i.group===chosen?.group).map(reference).join(', ')}}. Geef dit groepsnummer door om alles samen te wijzigen.</p><fieldset class="furniture-fields" :disabled="busy || !furnitureState"><label v-for="field in fields" :key="field.key">{{field.label}} (cm)<input type="number" step="0.1" :min="field.min" :max="field.max" :value="value(chosen,field.key)" @input="edit(chosen,field.key,$event)"/></label></fieldset><p>Maten wijzigen rond het middelpunt van het meubel. Hoge meubels kunnen in de plattegrond op muurhoogte worden afgesneden.</p><p>Geef bijvoorbeeld door: “{{reference(chosen)}} 20 cm naar rechts op de meubelkaart.”</p></template><span v-else>Selecteer een meubel voor het volledige nummer.</span></div>
- <p class="furniture-help">Maten: breedte × diepte × hoogte. Doorgegeven maten zijn verwerkt; overige maten en meubeltypen zijn benaderingen uit de tekening. Gebruik voor verplaatsen een afstand in cm en een muur, raam of richting op deze kaart.</p>
+ <div class="furniture-selection" aria-live="polite"><template v-if="chosen"><strong>{{reference(chosen)}} · {{label(chosen)}}</strong><p>{{room(chosen)}} · {{dimensions(chosen)}}</p><p v-if="chosen.group"><strong>{{chosen.group}} · {{chosen.group_name}}</strong> — {{items.filter(i=>i.group===chosen?.group).map(reference).join(', ')}}. Geef dit groepsnummer door om alles samen te wijzigen.</p>
+  <p><strong>Afmetingen</strong></p><fieldset class="furniture-fields" :disabled="busy || !furnitureState"><label v-for="field in dimensionFields" :key="field.key">{{field.label}} (cm)<input type="number" step="0.1" :min="field.min" :max="field.max" :value="value(chosen,field.key)" @input="edit(chosen,field.key,$event)"/></label></fieldset>
+  <p><strong>Positie</strong> · X/Y zijn databasecoördinaten; Z is de onderkant vanaf de vloer.</p><fieldset class="furniture-fields" :disabled="busy || !furnitureState"><label v-for="field in positionFields" :key="field.key">{{field.label}} (cm)<input type="number" step="0.1" :min="field.min" :max="field.max" :value="value(chosen,field.key)" @input="edit(chosen,field.key,$event)"/></label></fieldset>
+  <p><strong>Kleur</strong></p><fieldset class="furniture-fields" :disabled="busy || !furnitureState"><label>Kies kleur<input type="color" :value="pickerColor(chosen)" @input="editColor(chosen,$event)"/></label><label>Huidige keuze<span>{{drafts[reference(chosen)]?.color || chosen.color || 'Standaardkleur'}}</span><button v-if="drafts[reference(chosen)]?.color || chosen.color" type="button" @click="clearColor(chosen)">Standaardkleur gebruiken</button></label></fieldset>
+  <p>Maten wijzigen rond het middelpunt van het meubel. Hoge meubels kunnen in de plattegrond op muurhoogte worden afgesneden.</p></template><span v-else>Selecteer een meubel voor het volledige nummer.</span></div>
+ <p class="furniture-help">Maten: breedte × diepte × hoogte. Positie: X × Y × Z. De kleurkiezer gebruikt de gekozen kleur bij de volgende 3D-opbouw.</p>
  </div><div class="furniture-list"><button v-for="i in items" :key="i.id" :id="'furniture-'+reference(i)" :class="{selected:isSelected(i)}" @click="selected=reference(i)"><span class="furniture-ref">{{reference(i)}}</span><span><strong>{{label(i)}}</strong><small>{{room(i)}} · {{dimensions(i)}}</small><small v-if="i.group">{{i.group}} · {{i.group_name}}</small></span></button></div></div>
 </section></div>
 </template>
