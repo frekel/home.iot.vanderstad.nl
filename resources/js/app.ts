@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import MeasureApp from './MeasureApp.vue';
 import { refreshHouse } from './house';
+import './dashboard-navigation';
 import '../css/app.css';
 import '../css/dashboard-layout.css';
 import '../css/measure.css';
