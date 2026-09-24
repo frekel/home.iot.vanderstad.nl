@@ -53,6 +53,7 @@ return new class extends Migration
             }
 
             $counterX = $bg45Right + ($counterWidth / 2);
+            $trashBinX = $bg45Right + .15;
             $topWallY = (float) $topWall->y1;
             $sortOrder = ((int) DB::table('furniture_items')->max('sort_order')) + 1;
 
@@ -72,7 +73,7 @@ return new class extends Migration
                 'kind' => 'trash_bin',
                 'model_kind' => 'trash_bin',
                 'source_shape' => 'user_measured',
-                'x' => $counterX,
+                'x' => $trashBinX,
                 'y' => $topWallY + .15,
                 'rotation' => 0,
                 'width' => .30,
@@ -81,7 +82,7 @@ return new class extends Migration
                 'base_z' => 0,
                 'metadata' => json_encode([
                     'measured' => true,
-                    'note' => 'Hoge prullenbak rechts naast BG-45, onder BG-208.',
+                    'note' => 'Hoge prullenbak direct rechts naast BG-45, onder BG-208.',
                 ], JSON_THROW_ON_ERROR),
                 'sort_order' => $sortOrder++,
             ]);
