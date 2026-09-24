@@ -2,7 +2,8 @@ import {ref} from 'vue';
 
 export type FurnitureItem = {
  id:string; floor:string; kind:string; x:number; y:number; rotation:number;
- width:number; depth:number; height:number; base_z:number; group?:string; group_name?:string;
+ width:number; depth:number; height:number; base_z:number; color?:string;
+ group?:string; group_name?:string;
 };
 export type FurnitureState = {
  revision:number; model_revision:number|null; status:'ready'|'queued'|'building'|'failed';
