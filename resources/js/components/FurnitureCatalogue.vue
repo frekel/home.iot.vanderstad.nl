@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {computed,ref} from 'vue';
 import {X} from '@lucide/vue';
-import house from '../house.json';
+import {house} from '../house';
 import {furnitureState,furnitureLoadError,refreshFurniture,type FurnitureItem} from '../furniture';
 const props=defineProps<{initialFloor:string;roomLabel:(id:string)=>string}>();
 defineEmits<{close:[]}>();
@@ -14,7 +14,7 @@ function reference(i:Item){return `${prefixes[i.floor]}-${i.id==='levi-tv-cabine
 function label(i:Item){if(i.kind==='wall_cabinet_set')return `Drie hangkastjes · elk ${Math.round(i.width*100/3)} cm breed`;if(i.kind==='split_door_cabinet')return `Kast · deuren ${Math.round(i.width*60)} / ${Math.round(i.width*40)} cm`;return i.id==='levi-tv-cabinet'?'Kast aan voeteneinde V1-244':i.id==='levi-tv'?'Levi · tv aan muur':names[i.kind]??i.kind}
 function contains(p:number[][],x:number,y:number){let inside=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const a=p[i]!,b=p[j]!;if((a[1]!>y)!==(b[1]!>y)&&x<(b[0]!-a[0]!)*(y-a[1]!)/(b[1]!-a[1]!)+a[0]!)inside=!inside}return inside}
 function room(i:Item){const r=house.floors.find(f=>f.id===i.floor)?.rooms.find(r=>contains(r.polygon,i.x,i.y));return r?props.roomLabel(r.id):'Plaatsing controleren'}
-function position(x:number,y:number){return [floor.value==='ground'?x:-x,floor.value==='ground'?y:-y]}
+function position(x:number,y:number){const mirrored=house.floors.find(f=>f.id===floor.value)?.display_mirrored??false;return mirrored?[-x,-y]:[x,y]}
 function footprint(i:Item){const a=i.rotation*Math.PI/180;return [[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx,sy])=>{const x=sx!*i.width/2,y=sy!*i.depth/2;return position(i.x+x*Math.cos(a)-y*Math.sin(a),i.y+x*Math.sin(a)+y*Math.cos(a)).join(',')}).join(' ')}
 const current=computed(()=>house.floors.find(f=>f.id===floor.value)!);
 const items=computed<Item[]>(()=>(furnitureState.value?.items??[]).filter(i=>i.floor===floor.value));
@@ -66,7 +66,7 @@ async function build(){
  <div class="furniture-columns"><div class="furniture-map">
  <svg :viewBox="`${-current.length/2-0.7} -3.6 ${current.length+1.4} 7.2`" role="img" :aria-label="`Meubelkaart ${floorNames[floor]}`">
   <polygon v-for="r in current.rooms" :key="r.id" :points="r.polygon.map(p=>position(p[0]!,p[1]!).join(',')).join(' ')" fill="#242e39" stroke="#46515f" stroke-width=".015"/>
-  <line v-for="(wall,n) in current.walls" :key="n" :x1="position(wall[0]!,wall[1]!)[0]" :y1="position(wall[0]!,wall[1]!)[1]" :x2="position(wall[2]!,wall[3]!)[0]" :y2="position(wall[2]!,wall[3]!)[1]" stroke="#bcc5cf" stroke-width=".065"/>
+  <line v-for="wall in current.walls" :key="wall.id" :x1="position(wall.x1,wall.y1)[0]" :y1="position(wall.x1,wall.y1)[1]" :x2="position(wall.x2,wall.y2)[0]" :y2="position(wall.x2,wall.y2)[1]" stroke="#bcc5cf" stroke-width=".065"/>
   <polygon v-for="i in items" :key="i.id" :points="footprint(i)" :fill="isSelected(i)?'#ff8a1860':'#8b735544'" :stroke="isSelected(i)?'#ffad55':'#aa9375'" stroke-width=".025" @click="choose(i)"><title>{{reference(i)}} · {{label(i)}}</title></polygon>
   <g v-for="m in markers" :key="m.item.id" role="button" tabindex="0" :aria-label="`${reference(m.item)} ${label(m.item)}`" @click="choose(m.item)" @keydown.enter.prevent="choose(m.item)" @keydown.space.prevent="choose(m.item)" style="cursor:pointer"><line :x1="position(m.item.x,m.item.y)[0]" :y1="position(m.item.x,m.item.y)[1]" :x2="m.x" :y2="m.y" stroke="#dfaf70" stroke-width=".018"/><circle :cx="m.x" :cy="m.y" r=".19" :fill="isSelected(m.item)?'#ff8a18':'#131b24'" stroke="#ffaf59" stroke-width=".017"/><text :x="m.x" :y="m.y+.047" text-anchor="middle" font-size=".135" :fill="isSelected(m.item)?'#101419':'#fff'">{{reference(m.item).split('-')[1]}}</text></g>
  </svg>
