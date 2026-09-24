@@ -12,104 +12,241 @@
   }
 
   #app .dashboard .dashboard-metrics {
-    grid-template-columns: 1.18fr .78fr .78fr .67fr 1.15fr;
-    gap: 8px;
-    padding-top: 12px;
-    align-items: stretch;
+    grid-template-columns:
+      minmax(240px, 1.45fr)
+      minmax(145px, .72fr)
+      minmax(165px, .82fr)
+      minmax(135px, .66fr)
+      minmax(165px, .84fr)
+      minmax(165px, .84fr);
+    gap: 10px;
+    padding-top: 14px;
+    align-items: start;
   }
 
-  #app .dashboard .dashboard-metrics .metric {
+  #app .dashboard .dashboard-metrics > .metric {
     min-width: 0;
-    height: 142px;
-    padding: 12px 13px;
+    height: 158px;
+    padding: 15px 16px;
   }
 
-  #app .dashboard .dashboard-metrics .metric-top {
+  #app .dashboard .dashboard-metrics > .energy-chart {
+    height: 190px;
+  }
+
+  #app .dashboard .dashboard-metrics .metric-top,
+  #app .dashboard .dashboard-metrics .section-title {
     gap: 8px;
+  }
+
+  #app .dashboard .dashboard-metrics .section-title,
+  #app .dashboard .dashboard-metrics .eyebrow {
+    text-transform: none;
+    letter-spacing: .45px;
+  }
+
+  #app .dashboard .dashboard-metrics .section-title > span,
+  #app .dashboard .dashboard-metrics .metric-top .eyebrow::before {
+    color: #d9e0e8;
+    font-size: 10px;
+    font-weight: 550;
+  }
+
+  #app .dashboard .dashboard-metrics > .climate:nth-of-type(2) .eyebrow,
+  #app .dashboard .dashboard-metrics > .climate:nth-of-type(3) .eyebrow,
+  #app .dashboard .footer-lights .eyebrow {
+    font-size: 0;
+    letter-spacing: 0;
+  }
+
+  #app .dashboard .dashboard-metrics > .climate:nth-of-type(2) .eyebrow::before {
+    content: "Woonkamer - temperatuur";
+  }
+
+  #app .dashboard .dashboard-metrics > .climate:nth-of-type(3) .eyebrow::before {
+    content: "Woonkamer - luchtvochtigheid";
+  }
+
+  #app .dashboard .footer-lights .eyebrow::before {
+    content: "Verlichting";
+  }
+
+  #app .dashboard .dashboard-metrics .eyebrow > small {
+    font-size: 8px;
+    letter-spacing: 0;
+    padding-left: 6px;
   }
 
   #app .dashboard .dashboard-metrics .reading {
-    font-size: 32px;
-    margin-top: 7px;
+    font-size: 38px;
+    margin-top: 12px;
   }
 
   #app .dashboard .dashboard-metrics .reading > span {
-    font-size: 20px;
+    font-size: 23px;
+  }
+
+  #app .dashboard .dashboard-metrics .climate p {
+    font-size: 9px;
+    line-height: 1.45;
+    margin-top: 5px;
   }
 
   #app .dashboard .dashboard-metrics .energy-chart .week-chart {
-    height: 74px;
-    gap: 7px;
+    height: 112px;
+    gap: 9px;
   }
 
   #app .dashboard .dashboard-metrics .energy-chart .energy-updated {
-    margin-top: 3px;
+    margin-top: 7px;
+    font-size: 8px;
+  }
+
+  #app .dashboard .footer-lights {
+    padding: 0 !important;
   }
 
   #app .dashboard .footer-lights-button {
-    padding: 12px 13px;
+    width: 100%;
+    height: 100%;
+    padding: 15px 16px;
+    background: transparent;
+    text-align: left;
+    border-radius: 14px;
+  }
+
+  #app .dashboard .footer-lights-button .metric-top svg {
+    color: var(--orange);
   }
 
   #app .dashboard .footer-lights-count {
-    font-size: 30px;
-    margin: 8px 0 1px;
+    font-size: 36px;
+    font-weight: 350;
+    letter-spacing: -1.5px;
+    margin: 14px 0 3px;
   }
 
   #app .dashboard .footer-lights-count span {
-    font-size: 14px;
+    font-size: 15px;
+    color: #657180;
+    margin-left: 5px;
+    letter-spacing: 0;
   }
 
-  #app .dashboard .footer-lights-button strong {
-    font-size: 11px;
+  #app .dashboard .footer-lights-button > strong {
+    display: none;
   }
 
   #app .dashboard .footer-lights-button p {
-    margin-top: 4px;
-    font-size: 8px;
+    margin: 6px 0 0;
+    font-size: 9px;
+    color: var(--muted);
   }
 
+  /* Turn Home Access into two independent cards in the same grid row. */
+  #app .dashboard .footer-access,
   #app .dashboard .footer-access-list {
-    gap: 4px;
-    margin-top: 6px;
+    display: contents;
   }
 
-  #app .dashboard .footer-access-list article {
-    padding-bottom: 4px;
+  #app .dashboard .footer-access > .metric-top,
+  #app .dashboard .footer-access > .footer-access-sync {
+    display: none;
+  }
+
+  #app .dashboard .footer-access-list > article {
+    min-width: 0;
+    height: 158px;
+    padding: 15px 16px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: linear-gradient(120deg, #1a2028, #13181e);
+    overflow: hidden;
+  }
+
+  #app .dashboard .footer-access-title {
+    display: block;
   }
 
   #app .dashboard .footer-access-title strong {
-    font-size: 9px;
+    display: block;
+    color: #d9e0e8;
+    font-size: 11px;
+    font-weight: 550;
+    letter-spacing: .2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  #app .dashboard .footer-access-title small,
-  #app .dashboard .footer-access-state {
+  #app .dashboard .footer-access-title small {
+    display: block;
+    margin-top: 5px;
+    color: var(--muted);
     font-size: 8px;
   }
 
-  #app .dashboard .footer-access-time,
-  #app .dashboard .footer-access-sync {
-    font-size: 6px;
+  #app .dashboard .footer-access-state {
+    display: grid;
+    gap: 9px;
+    margin-top: 15px;
+  }
+
+  #app .dashboard .footer-access-state b {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 550;
+  }
+
+  #app .dashboard .footer-access-state b::before {
+    color: #8b96a5;
+    font-size: 9px;
+    font-weight: 400;
+  }
+
+  #app .dashboard .footer-access-state b:first-child::before {
+    content: "Deur";
+  }
+
+  #app .dashboard .footer-access-state b:nth-child(2)::before {
+    content: "Slot";
+  }
+
+  #app .dashboard .footer-access-time {
+    display: block;
+    margin-top: 9px;
+    color: #66717d;
+    font-size: 8px;
+    line-height: 1.35;
+  }
+
+  #app .dashboard .footer-access-state .access-open {
+    color: #ffb86b;
+  }
+
+  #app .dashboard .footer-access-state .access-closed {
+    color: #79c6a1;
   }
 }
 
-@media (min-width: 751px) and (max-width: 1000px) {
+@media (min-width: 751px) and (max-width: 1180px) {
   #app .dashboard .dashboard-metrics {
-    grid-template-columns: 1.08fr .72fr .72fr .62fr 1fr;
-    gap: 6px;
+    grid-template-columns: 230px 145px 165px 135px 165px 165px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+}
+
+@media (max-width: 750px) {
+  #app .dashboard .header-right > .lights-button:first-child {
+    font-size: 0;
   }
 
-  #app .dashboard .dashboard-metrics .metric {
-    height: 134px;
-    padding: 10px;
-  }
-
-  #app .dashboard .footer-lights-button {
-    padding: 10px;
-  }
-
-  #app .dashboard .footer-access-title small,
-  #app .dashboard .footer-access-time,
-  #app .dashboard .footer-access-sync {
-    display: none;
+  #app .dashboard .header-right > .lights-button:first-child::after {
+    content: "Meetmodus";
+    font-size: 11px;
   }
 }
