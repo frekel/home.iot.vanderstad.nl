@@ -95,13 +95,16 @@ Route::put('/dashboard/furniture', function (Request $request, FurnitureLayout $
     $data = $request->validate([
         'revision' => ['required', 'integer', 'min:0'],
         'items' => ['present', 'array', 'max:200'],
-        'items.*' => ['array:floor,id,width,depth,height,base_z'],
+        'items.*' => ['array:floor,id,width,depth,height,base_z,x,y,color'],
         'items.*.floor' => ['required', 'in:ground,upper,attic'],
         'items.*.id' => ['required', 'string', 'max:64'],
         'items.*.width' => ['required', 'numeric', 'min:5', 'max:1100'],
         'items.*.depth' => ['required', 'numeric', 'min:1', 'max:550'],
         'items.*.height' => ['required', 'numeric', 'min:1', 'max:400'],
-        'items.*.base_z' => ['required', 'numeric', 'min:0', 'max:300'],
+        'items.*.base_z' => ['required', 'numeric', 'min:0', 'max:500'],
+        'items.*.x' => ['sometimes', 'numeric', 'min:-2000', 'max:2000'],
+        'items.*.y' => ['sometimes', 'numeric', 'min:-2000', 'max:2000'],
+        'items.*.color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
     ]);
     $data['revision'] = (int) $data['revision'];
 
