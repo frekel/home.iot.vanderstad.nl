@@ -96,11 +96,13 @@ class FurnitureLayout
                 $metadata = $current->metadata
                     ? json_decode($current->metadata, true, flags: JSON_THROW_ON_ERROR)
                     : [];
-                $color = trim((string) ($item['color'] ?? ''));
-                if ($color === '') {
-                    unset($metadata['color']);
-                } else {
-                    $metadata['color'] = strtolower($color);
+                if (array_key_exists('color', $item)) {
+                    $color = trim((string) ($item['color'] ?? ''));
+                    if ($color === '') {
+                        unset($metadata['color']);
+                    } else {
+                        $metadata['color'] = strtolower($color);
+                    }
                 }
 
                 DB::table('furniture_items')
