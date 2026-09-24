@@ -3,7 +3,7 @@
 The worker writes one input JSON containing both `house` geometry and `items`.
 No house coordinates are defined or corrected in this renderer.
 """
-import bpy, json, math, runpy, hashlib, os
+import bpy, json, math, runpy, hashlib, os, re
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
@@ -21,12 +21,23 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.context.scene.unit_settings.system='METRIC'
 def mat(name,color):
  m=bpy.data.materials.new(name);m.diffuse_color=(*color,1);m.use_nodes=True;m.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value=(*color,1);return m
+def hex_rgb(value):
+ if not isinstance(value,str) or not re.fullmatch(r'#[0-9a-fA-F]{6}',value):
+  raise RuntimeError(f'Invalid furniture colour: {value}')
+ return tuple(int(value[n:n+2],16)/255 for n in (1,3,5))
 wallmat=mat('Warm lime plaster',(0.77,0.75,0.69));wood=mat('Natural oak',(0.47,0.34,0.21));tile=mat('Warm stone',(0.58,0.59,0.56));edge=mat('Cut wall cap',(0.27,0.29,0.30))
 brick=mat('Outer brick',(0.37,0.20,0.13));cavity=mat('Insulated cavity section',(0.33,0.34,0.30))
 build_furniture=runpy.run_path(str(ROOT/'assets/blender/build_furniture.py'))['build_furniture']
 custom_module=runpy.run_path(str(ROOT/'assets/blender/build_custom_furniture.py'))
 build_custom_furniture=custom_module['build_custom_furniture'];custom_kinds=custom_module['CUSTOM_KINDS']
 palette={'oak':mat('Furniture oak',(.52,.36,.22)),'fabric':mat('Warm grey upholstery',(.22,.25,.25)),'fabric_light':mat('Cushion fabric',(.38,.41,.39)),'linen':mat('Cotton linen',(.86,.84,.76)),'blue':mat('Muted blue bedding',(.21,.35,.43)),'dark':mat('Graphite',(.035,.04,.045)),'screen':mat('TV glass',(.018,.035,.05)),'ceramic':mat('Porcelain',(.88,.88,.83)),'basin':mat('Recessed basin',(.41,.47,.47)),'green':mat('Foliage',(.12,.28,.08)),'basket':mat('Woven baskets',(.48,.37,.24)),'mirror':mat('Mirror glass',(.58,.69,.74)),'stone':tile,'metal':mat('Brushed metal',(.35,.38,.4))}
+custom_colour_materials={}
+
+def furniture_colour(value):
+ key=value.lower()
+ if key not in custom_colour_materials:
+  custom_colour_materials[key]=mat('Furniture colour '+key,hex_rgb(key))
+ return custom_colour_materials[key]
 
 for f in data['floors']:
  bpy.ops.object.select_all(action='DESELECT');objects=[]
@@ -64,14 +75,20 @@ for f in data['floors']:
  objects.extend(build_furniture(regular,f,palette))
  objects.extend(build_custom_furniture(furniture,f,palette))
 
- # Item-specific appearance is data. Blender only applies a generic palette key
- # supplied by furniture metadata; it never checks a particular furniture ID.
+ # Item-specific appearance is data. A user-defined hex colour takes priority
+ # over the generic material palette override.
  for item in furniture:
-  if item['floor']!=f['id'] or not item.get('material_override'):
+  if item['floor']!=f['id']:
    continue
-  material=palette.get(item['material_override'])
+  material=None
+  if item.get('color'):
+   material=furniture_colour(item['color'])
+  elif item.get('material_override'):
+   material=palette.get(item['material_override'])
+   if material is None:
+    raise RuntimeError(f"Unknown furniture material override: {item['material_override']}")
   if material is None:
-   raise RuntimeError(f"Unknown furniture material override: {item['material_override']}")
+   continue
   prefix=f"furniture__{f['id']}__{item['id']}__"
   for o in objects:
    if o.name.startswith(prefix) and getattr(o,'data',None) is not None and hasattr(o.data,'materials'):
