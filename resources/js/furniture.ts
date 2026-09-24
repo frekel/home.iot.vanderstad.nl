@@ -16,7 +16,11 @@ let stopped=false;
 export async function refreshFurniture(){
  const response=await fetch('/dashboard/furniture',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(15000)});
  if(!response.ok)throw new Error('De meubelgegevens konden niet worden geladen.');
- furnitureState.value=await response.json(); furnitureLoadError.value='';
+ const next=await response.json() as FurnitureState;
+ // A poll can start just before a save and finish afterwards. Never let that
+ // older response replace the newer revision returned by the save request.
+ if(!furnitureState.value||next.revision>=furnitureState.value.revision)furnitureState.value=next;
+ furnitureLoadError.value='';
 }
 export function startFurniturePolling(){
  stopped=false;
