@@ -11,7 +11,7 @@ const updated=computed(()=>props.energy?.updated_at?new Date(props.energy.update
 </script>
 <template>
 <section :class="compact?'side-section daily-energy':'metric energy-chart'">
- <div class="section-title"><Zap :size="15"/><span>{{compact?'DAILY ENERGY':'ENERGIEVERBRUIK'}}</span><small>Homey</small></div>
+ <div class="section-title"><Zap :size="15"/><span>{{compact?'DAILY ENERGY':'Energieverbruik'}}</span><small>Homey</small></div>
  <template v-if="compact">
   <div class="energy-total">{{format(energy?.today?.consumed)}} <span>kWh</span><small>Vandaag</small></div>
   <dl v-if="energy?.available" class="energy-totals">
