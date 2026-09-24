@@ -110,19 +110,28 @@
     padding: 15px 16px !important;
   }
 
+  /* A native button vertically centers its contents in Chromium. Make this
+     explicitly a top-aligned flex column so it follows the exact same flow
+     as the climate cards. */
   #app .dashboard .footer-lights-button {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
     width: 100%;
     height: 100%;
+    margin: 0;
     padding: 0;
+    appearance: none;
+    -webkit-appearance: none;
     background: transparent;
     text-align: left;
     border-radius: 0;
   }
 
-  /* Same header flow and vertical rhythm as the climate cards. */
   #app .dashboard .footer-lights-button .metric-top {
     position: static;
+    flex: 0 0 auto;
   }
 
   #app .dashboard .footer-lights-button .metric-top svg {
@@ -131,8 +140,10 @@
 
   /* Match .reading exactly: same size, spacing and vertical position. */
   #app .dashboard .footer-lights-count {
+    flex: 0 0 auto;
     font-size: 38px;
     font-weight: 350;
+    line-height: normal;
     letter-spacing: -2px;
     margin: 12px 0 0;
   }
@@ -150,6 +161,7 @@
 
   /* Match the climate-card subtitle exactly. */
   #app .dashboard .footer-lights-button p {
+    flex: 0 0 auto;
     margin: 5px 0 0;
     font-size: 9px;
     line-height: 1.45;
