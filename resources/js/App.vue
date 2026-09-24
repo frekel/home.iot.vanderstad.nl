@@ -82,6 +82,24 @@ async function toggle(id:string){
   await checkConnection();
  }catch(e){commandError.value[id]=e instanceof Error?e.message:'Light command failed.';await checkConnection()}finally{commandBusy.value[id]=false}
 }
+async function toggleRoom(id:string){
+ if(!connection.value.connected)return;
+ await checkConnection();
+ const roomId=layout.value.aliases?.[id]??id;
+ const zone=layout.value.rooms[roomId];
+ if(!zone)return;
+ const targets=allLights.value.filter(d=>d.zone===zone&&d.available===true&&d.measurements.onoff?.settable===true&&typeof d.measurements.onoff?.value==='boolean');
+ if(!targets.length||targets.some(d=>commandBusy.value[d.id]||pending.value[d.id]))return;
+ const desired=!targets.some(d=>d.measurements.onoff?.value===true);
+ const csrf=document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content??'';
+ for(const d of targets){commandBusy.value[d.id]=true;commandError.value[d.id]=''}
+ try{
+  const responses=await Promise.all(targets.map(d=>fetch(`/dashboard/lights/${encodeURIComponent(d.id)}`,{method:'PUT',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf},body:JSON.stringify({value:desired}),signal:AbortSignal.timeout(15000)})));
+  if(responses.some(r=>!r.ok))throw new Error('Niet alle lampen accepteerden het commando.');
+  for(const d of targets)pending.value[d.id]={value:desired,deadline:Date.now()+15000};
+  await checkConnection();
+ }catch(e){for(const d of targets)commandError.value[d.id]=e instanceof Error?e.message:'Lichtcommando mislukt.';await checkConnection()}finally{for(const d of targets)commandBusy.value[d.id]=false}
+}
 </script>
 <template>
 <div class="dashboard">
@@ -93,7 +111,7 @@ async function toggle(id:string){
 <section class="side-section rooms"><div class="section-title"><House :size="15"/><span>HOMEY ROOMS</span><small>{{rooms.length}}</small></div><button v-for="r in rooms" :key="r.id" class="room-row" :class="{selected:selected===r.id}" @click="selected=r.id"><span class="room-dot" :class="{on:lights[r.id]}"/><span>{{r.label}}</span><ChevronRight :size="14"/></button></section>
 <div class="side-bottom"><WifiOff :size="16"/><div>{{connection.connected ? 'Homey connected' : 'Homey not connected'}}<small>Live devices refresh every 5 seconds</small></div></div>
 </aside>
-<section class="house-view"><div class="view-heading"><span class="eyebrow">EXPLORE YOUR SPACE</span><h2>{{current.label}}</h2><p>Drag to rotate · Scroll to zoom · Click a room</p></div><div class="view-controls"><button class="icon-button" aria-label="Reset camera" @click="scene?.reset()"><RotateCcw :size="17"/></button><button class="icon-button" aria-label="Top view" @click="scene?.top()"><Layers :size="17"/></button></div><HouseScene ref="scene" :floor="floor" :selected="selected" :lights="lights" :aliases="layout.aliases ?? {}" @select="selected=$event"/><div class="model-note">APPROXIMATE MODEL <span>·</span> Internal dimensions in metres</div><div class="room-lights" v-if="room"><div class="section-title"><Lightbulb :size="15"/>{{room.label}} · {{selectedLights.length}} lights</div><LightControls :devices="selectedLights" :connected="connection.connected" :busy="commandBusy" :pending="pending" :errors="commandError" @toggle="toggle"/></div></section>
+<section class="house-view"><div class="view-heading"><span class="eyebrow">EXPLORE YOUR SPACE</span><h2>{{current.label}}</h2><p>Drag to rotate · Scroll to zoom · Click a room</p></div><div class="view-controls"><button class="icon-button" aria-label="Reset camera" @click="scene?.reset()"><RotateCcw :size="17"/></button><button class="icon-button" aria-label="Top view" @click="scene?.top()"><Layers :size="17"/></button></div><HouseScene ref="scene" :floor="floor" :selected="selected" :lights="lights" :aliases="layout.aliases ?? {}" @select="selected=$event" @toggle-room="toggleRoom"/><div class="model-note">APPROXIMATE MODEL <span>·</span> Internal dimensions in metres</div><div class="room-lights" v-if="room"><div class="section-title"><Lightbulb :size="15"/>{{room.label}} · {{selectedLights.length}} lights</div><LightControls :devices="selectedLights" :connected="connection.connected" :busy="commandBusy" :pending="pending" :errors="commandError" @toggle="toggle"/></div></section>
 </main>
 <footer class="metrics dashboard-metrics">
 <EnergyPanel :energy="energy"/>
