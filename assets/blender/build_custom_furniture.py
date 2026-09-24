@@ -1,7 +1,7 @@
 """Custom furniture shapes for user-measured pieces that are not in the traced source."""
 import bpy, math
 
-CUSTOM_KINDS={'hanging_desk','monitor','laptop','wardrobe_drawers','micke_desk','kobra4','skadis_filament','storage_rack','laundry_basket','wall_radiator'}
+CUSTOM_KINDS={'hanging_desk','monitor','laptop','wardrobe_drawers','micke_desk','kobra4','skadis_filament','storage_rack','laundry_basket','wall_radiator','city_scenery_shelf','trash_bin','countertop'}
 
 def build_custom_furniture(items, floor, materials):
     objects=[]
@@ -75,7 +75,7 @@ def build_custom_furniture(items, floor, materials):
             for n in range(3):
                 z=(n+.5)*drawer_h
                 box('drawer_'+str(n+1),(right_w,.025,drawer_h-.015),(w/4,front_y,z),'oak',.004)
-                box('drawer_handle_'+str(n+1),(.16,.025,.018),(w/4,front_y+.025,z),'metal',.003)
+                box('drawer_handle_'+str(n+1),(.16,.025,.022),(w/4,front_y+.025,z),'metal',.003)
             box('left_handle',(.025,.025,.18),(-.035,front_y+.025,h*.53),'metal',.003)
             box('right_handle',(.025,.025,.18),(.035,front_y+.025,h*.74),'metal',.003)
 
@@ -141,6 +141,38 @@ def build_custom_furniture(items, floor, materials):
             for z in [h*.25,h*.50,h*.75]:
                 box('woven_front',(w*.84,.008,.012),(0,d/2+.005,z),'oak',.002)
                 box('woven_back',(w*.84,.008,.012),(0,-d/2-.005,z),'oak',.002)
+
+        elif k=='city_scenery_shelf':
+            # BG-204: a narrow shelf with a small city/countryside diorama on top.
+            box('shelf',(w,d,h),(0,0,h/2),'oak',.006)
+            top=h
+            box('grass_field',(w*.46,d*.82,.008),(-w*.25,-d*.02,top+.004),'green',.001)
+            box('crop_field',(w*.34,d*.35,.009),(w*.29,-d*.20,top+.0045),'basket',.001)
+            box('road',(w*.88,d*.10,.007),(0,d*.14,top+.0035),'dark',.001)
+            box('water',(w*.30,d*.12,.006),(w*.25,d*.28,top+.003),'blue',.001)
+            houses=[
+                (-.37,-.21,.10,.11,'ceramic'),(-.18,-.16,.085,.09,'oak'),
+                (.01,-.19,.12,.13,'ceramic'),(.20,-.12,.095,.10,'oak'),
+                (.37,-.03,.11,.12,'ceramic'),(-.28,.20,.09,.10,'oak'),(.04,.22,.11,.12,'ceramic')
+            ]
+            for n,(xr,yr,bw,bh,material) in enumerate(houses,1):
+                body_h=.07+.015*(n%3)
+                x=xr*w;y=yr*d
+                box('house_'+str(n),(bw,bh,body_h),(x,y,top+body_h/2),'material' if False else material,.006)
+                box('roof_'+str(n),(bw+.025,bh+.025,.025),(x,y,top+body_h+.0125),'dark',.004)
+            for n,(xr,yr) in enumerate([(-.43,.05),(-.10,.03),(.30,.16),(.43,.24)],1):
+                x=xr*w;y=yr*d
+                cylinder('tree_trunk_'+str(n),.012,.08,(x,y,top+.04),'oak')
+                cylinder('tree_crown_'+str(n),.04,.075,(x,y,top+.105),'green')
+
+        elif k=='trash_bin':
+            body_h=max(.10,h-.055)
+            box('bin_body',(w,d,body_h),(0,0,body_h/2),'dark',.035)
+            box('lid',(w*.94,d*.94,.045),(0,0,body_h+.0225),'metal',.02)
+            box('pedal',(w*.28,.05,.025),(0,d/2+.012,.035),'metal',.007)
+
+        elif k=='countertop':
+            box('worktop',(w,d,h),(0,0,h/2),'stone',.008)
 
         elif k=='wall_radiator':
             # Slim wall-mounted panel radiator with vertical front ribs.
