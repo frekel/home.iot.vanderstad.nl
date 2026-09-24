@@ -107,7 +107,6 @@
   }
 
   #app .dashboard .footer-lights {
-    position: relative;
     padding: 15px 16px !important;
   }
 
@@ -121,40 +120,40 @@
     border-radius: 0;
   }
 
-  /* Keep the Verlichting header on exactly the same top line as the climate cards. */
+  /* Same header flow and vertical rhythm as the climate cards. */
   #app .dashboard .footer-lights-button .metric-top {
-    position: absolute;
-    top: 15px;
-    left: 16px;
-    right: 16px;
+    position: static;
   }
 
   #app .dashboard .footer-lights-button .metric-top svg {
     color: var(--orange);
   }
 
+  /* Match .reading exactly: same size, spacing and vertical position. */
   #app .dashboard .footer-lights-count {
-    font-size: 36px;
+    font-size: 38px;
     font-weight: 350;
-    letter-spacing: -1.5px;
-    margin: 43px 0 3px;
+    letter-spacing: -2px;
+    margin: 12px 0 0;
   }
 
   #app .dashboard .footer-lights-count span {
-    font-size: 15px;
-    color: #657180;
-    margin-left: 5px;
-    letter-spacing: 0;
+    font-size: 23px;
+    color: #aab1bb;
+    letter-spacing: -1px;
+    margin-left: 4px;
   }
 
   #app .dashboard .footer-lights-button > strong {
     display: none;
   }
 
+  /* Match the climate-card subtitle exactly. */
   #app .dashboard .footer-lights-button p {
-    margin: 6px 0 0;
+    margin: 5px 0 0;
     font-size: 9px;
-    color: var(--muted);
+    line-height: 1.45;
+    color: #7e8b9c;
   }
 
   /* Turn Home Access into two independent cards in the same grid row. */
