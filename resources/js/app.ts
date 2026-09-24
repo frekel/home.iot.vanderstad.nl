@@ -3,6 +3,7 @@ import App from './App.vue';
 import MeasureApp from './MeasureApp.vue';
 import { refreshHouse } from './house';
 import '../css/app.css';
+import '../css/dashboard-layout.css';
 import '../css/measure.css';
 
 const RootApp = location.pathname === '/measure' ? MeasureApp : App;
