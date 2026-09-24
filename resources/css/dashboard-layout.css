@@ -1,0 +1,115 @@
+@media (min-width: 751px) {
+  #app .dashboard > main {
+    grid-template-columns: 200px minmax(0, 1fr);
+  }
+
+  #app .dashboard .sidebar {
+    padding-right: 16px;
+  }
+
+  #app .dashboard .house-canvas {
+    transform: translateX(9%);
+  }
+
+  #app .dashboard .dashboard-metrics {
+    grid-template-columns: 1.18fr .78fr .78fr .67fr 1.15fr;
+    gap: 8px;
+    padding-top: 12px;
+    align-items: stretch;
+  }
+
+  #app .dashboard .dashboard-metrics .metric {
+    min-width: 0;
+    height: 142px;
+    padding: 12px 13px;
+  }
+
+  #app .dashboard .dashboard-metrics .metric-top {
+    gap: 8px;
+  }
+
+  #app .dashboard .dashboard-metrics .reading {
+    font-size: 32px;
+    margin-top: 7px;
+  }
+
+  #app .dashboard .dashboard-metrics .reading > span {
+    font-size: 20px;
+  }
+
+  #app .dashboard .dashboard-metrics .energy-chart .week-chart {
+    height: 74px;
+    gap: 7px;
+  }
+
+  #app .dashboard .dashboard-metrics .energy-chart .energy-updated {
+    margin-top: 3px;
+  }
+
+  #app .dashboard .footer-lights-button {
+    padding: 12px 13px;
+  }
+
+  #app .dashboard .footer-lights-count {
+    font-size: 30px;
+    margin: 8px 0 1px;
+  }
+
+  #app .dashboard .footer-lights-count span {
+    font-size: 14px;
+  }
+
+  #app .dashboard .footer-lights-button strong {
+    font-size: 11px;
+  }
+
+  #app .dashboard .footer-lights-button p {
+    margin-top: 4px;
+    font-size: 8px;
+  }
+
+  #app .dashboard .footer-access-list {
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  #app .dashboard .footer-access-list article {
+    padding-bottom: 4px;
+  }
+
+  #app .dashboard .footer-access-title strong {
+    font-size: 9px;
+  }
+
+  #app .dashboard .footer-access-title small,
+  #app .dashboard .footer-access-state {
+    font-size: 8px;
+  }
+
+  #app .dashboard .footer-access-time,
+  #app .dashboard .footer-access-sync {
+    font-size: 6px;
+  }
+}
+
+@media (min-width: 751px) and (max-width: 1000px) {
+  #app .dashboard .dashboard-metrics {
+    grid-template-columns: 1.08fr .72fr .72fr .62fr 1fr;
+    gap: 6px;
+  }
+
+  #app .dashboard .dashboard-metrics .metric {
+    height: 134px;
+    padding: 10px;
+  }
+
+  #app .dashboard .footer-lights-button {
+    padding: 10px;
+  }
+
+  #app .dashboard .footer-access-title small,
+  #app .dashboard .footer-access-time,
+  #app .dashboard .footer-access-sync {
+    display: none;
+  }
+}
