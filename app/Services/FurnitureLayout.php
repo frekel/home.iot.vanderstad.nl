@@ -77,30 +77,43 @@ class FurnitureLayout
             abort_if((int) $row->revision !== $data['revision'], 409, 'De meubels zijn elders gewijzigd. Herlaad de lijst voor je opslaat.');
 
             $known = DB::table('furniture_items')
-                ->get(['floor_id', 'item_id'])
-                ->mapWithKeys(fn ($item) => [$item->floor_id.':'.$item->item_id => true])
-                ->all();
+                ->get()
+                ->mapWithKeys(fn ($item) => [$item->floor_id.':'.$item->item_id => $item]);
             $seen = [];
 
             foreach ($data['items'] as $index => $item) {
                 $key = $item['floor'].':'.$item['id'];
-                if (! isset($known[$key]) || isset($seen[$key])) {
+                if (! $known->has($key) || isset($seen[$key])) {
                     throw ValidationException::withMessages(["items.$index.id" => 'Onbekend of dubbel meubelnummer.']);
                 }
                 $seen[$key] = true;
+                $current = $known->get($key);
 
                 if ($item['height'] + $item['base_z'] > 500) {
                     throw ValidationException::withMessages(["items.$index.height" => 'Hoogte plus afstand vanaf de vloer mag maximaal 500 cm zijn.']);
+                }
+
+                $metadata = $current->metadata
+                    ? json_decode($current->metadata, true, flags: JSON_THROW_ON_ERROR)
+                    : [];
+                $color = trim((string) ($item['color'] ?? ''));
+                if ($color === '') {
+                    unset($metadata['color']);
+                } else {
+                    $metadata['color'] = strtolower($color);
                 }
 
                 DB::table('furniture_items')
                     ->where('floor_id', $item['floor'])
                     ->where('item_id', $item['id'])
                     ->update([
+                        'x' => array_key_exists('x', $item) ? round($item['x'] / 100, 5) : $current->x,
+                        'y' => array_key_exists('y', $item) ? round($item['y'] / 100, 5) : $current->y,
                         'width' => round($item['width'] / 100, 5),
                         'depth' => round($item['depth'] / 100, 5),
                         'height' => round($item['height'] / 100, 5),
                         'base_z' => round($item['base_z'] / 100, 5),
+                        'metadata' => json_encode($metadata, JSON_THROW_ON_ERROR),
                     ]);
             }
 
