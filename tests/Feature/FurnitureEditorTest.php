@@ -75,6 +75,7 @@ class FurnitureEditorTest extends TestCase
         config(['furniture.blender' => '/bin/false', 'furniture.build_path' => $directory]);
         DB::table('furniture_layouts')->where('id', 1)->update(['model_revision' => 0]);
         $this->putJson('/dashboard/furniture', ['revision' => 0, 'items' => [$this->change()]])->assertOk();
+        $this->postJson('/dashboard/furniture/build', ['revision' => 1])->assertAccepted()->assertJsonPath('status', 'queued');
         $job = new BuildFurniture(1);
         try {
             $job->handle(app(FurnitureLayout::class));
@@ -95,6 +96,7 @@ class FurnitureEditorTest extends TestCase
         $directory = sys_get_temp_dir().'/furniture-test-'.bin2hex(random_bytes(8));
         config(['furniture.blender' => '/bin/true', 'furniture.build_path' => $directory]);
         $this->putJson('/dashboard/furniture', ['revision' => 0, 'items' => [$this->change()]])->assertOk();
+        $this->postJson('/dashboard/furniture/build', ['revision' => 1])->assertAccepted()->assertJsonPath('status', 'queued');
         $job = new BuildFurniture(1);
         try {
             $job->handle(app(FurnitureLayout::class));
