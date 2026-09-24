@@ -3,7 +3,7 @@ import {startFurniturePolling,stopFurniturePolling} from './furniture';
 import {onBeforeUnmount as onFurnitureUnmount,onMounted as onFurnitureMounted} from 'vue';
 onFurnitureMounted(startFurniturePolling);onFurnitureUnmount(stopFurniturePolling);
 import {computed,ref,onMounted,onBeforeUnmount} from 'vue';
-import {House, Layers, Moon, Lightbulb, Thermometer, Droplets, Zap, Settings, RotateCcw, MoveUpRight, ChevronRight, WifiOff, X, DoorOpen} from '@lucide/vue';
+import {House, Layers, Lightbulb, Thermometer, Droplets, Settings, RotateCcw, ChevronRight, WifiOff, X, DoorOpen} from '@lucide/vue';
 import HouseScene from './components/HouseScene.vue';
 import {house} from './house';
 import FurnitureCatalogue from './components/FurnitureCatalogue.vue';
@@ -94,11 +94,49 @@ async function toggle(id:string){
 <div class="side-bottom"><WifiOff :size="16"/><div>{{connection.connected ? 'Homey connected' : 'Homey not connected'}}<small>Live devices refresh every 5 seconds</small></div></div>
 </aside>
 <section class="house-view"><div class="view-heading"><span class="eyebrow">EXPLORE YOUR SPACE</span><h2>{{current.label}}</h2><p>Drag to rotate · Scroll to zoom · Click a room</p></div><div class="view-controls"><button class="icon-button" aria-label="Reset camera" @click="scene?.reset()"><RotateCcw :size="17"/></button><button class="icon-button" aria-label="Top view" @click="scene?.top()"><Layers :size="17"/></button></div><HouseScene ref="scene" :floor="floor" :selected="selected" :lights="lights" :aliases="layout.aliases ?? {}" @select="selected=$event"/><div class="model-note">APPROXIMATE MODEL <span>·</span> Internal dimensions in metres</div><div class="room-lights" v-if="room"><div class="section-title"><Lightbulb :size="15"/>{{room.label}} · {{selectedLights.length}} lights</div><LightControls :devices="selectedLights" :connected="connection.connected" :busy="commandBusy" :pending="pending" :errors="commandError" @toggle="toggle"/></div></section>
-<aside class="rightbar"><button class="scene-card" @click="showLights=true"><Lightbulb :size="22"/><strong>All lights</strong><span>{{allLights.length}} Homey lights<MoveUpRight :size="15"/></span></button><div class="light-summary"><span>{{active}}<small>/ {{rooms.length}}</small></span><p>rooms with lights on</p></div><div class="access"><div class="section-title"><DoorOpen :size="15"/>HOME ACCESS</div><article v-for="door in connection.access ?? []" :key="door.id" class="access-door"><strong>{{door.name}}</strong><small>{{door.zone}}</small><template v-if="connection.connected && door.available"><div><span>Deur</span><b :class="door.open===true?'access-open':door.open===false?'access-closed':''">{{door.open===true?'Open':door.open===false?'Dicht':'Onbekend'}}</b></div><small>{{accessChanged(door.contact_updated_at)}}</small><div><span>Slot</span><b :class="door.locked===true?'access-closed':door.locked===false?'access-open':''">{{door.locked===true?'Op slot':door.locked===false?'Niet op slot':'Onbekend'}}</b></div><small>{{accessChanged(door.lock_updated_at)}}</small></template><p v-else>Status niet beschikbaar</p></article><p>Doorgegeven door Homey · elke 5 seconden opgehaald</p></div></aside>
 </main>
-<footer class="metrics"><EnergyPanel :energy="energy"/><section class="metric climate"><div class="metric-top"><span class="eyebrow">{{roomLabel('living')}} <small>{{connection.connected ? 'Homey' : 'Offline'}}</small></span><Thermometer :size="20"/></div><div class="reading">{{reading('measure_temperature')}}<span>°C</span></div><p>{{climate?.name ?? 'No linked sensor'}} · {{readingAge('measure_temperature')}}</p></section><section class="metric climate"><div class="metric-top"><span class="eyebrow">{{roomLabel('living')}} · humidity <small>{{connection.connected ? 'Homey' : 'Offline'}}</small></span><Droplets :size="20"/></div><div class="reading">{{reading('measure_humidity')}}<span>%</span></div><p>{{climate?.name ?? 'No linked sensor'}} · {{readingAge('measure_humidity')}}</p></section></footer>
+<footer class="metrics dashboard-metrics">
+<EnergyPanel :energy="energy"/>
+<section class="metric climate"><div class="metric-top"><span class="eyebrow">{{roomLabel('living')}} <small>{{connection.connected ? 'Homey' : 'Offline'}}</small></span><Thermometer :size="20"/></div><div class="reading">{{reading('measure_temperature')}}<span>°C</span></div><p>{{climate?.name ?? 'No linked sensor'}} · {{readingAge('measure_temperature')}}</p></section>
+<section class="metric climate"><div class="metric-top"><span class="eyebrow">{{roomLabel('living')}} · humidity <small>{{connection.connected ? 'Homey' : 'Offline'}}</small></span><Droplets :size="20"/></div><div class="reading">{{reading('measure_humidity')}}<span>%</span></div><p>{{climate?.name ?? 'No linked sensor'}} · {{readingAge('measure_humidity')}}</p></section>
+<section class="metric footer-lights"><button type="button" class="footer-lights-button" @click="showLights=true"><div class="metric-top"><span class="eyebrow">VERLICHTING <small>Homey</small></span><Lightbulb :size="20"/></div><div class="footer-lights-count">{{active}}<span>/ {{rooms.length}}</span></div><strong>All lights</strong><p>{{allLights.length}} Homey lights · {{active}} kamers aan</p></button></section>
+<section class="metric footer-access"><div class="metric-top"><span class="eyebrow">HOME ACCESS <small>Homey</small></span><DoorOpen :size="20"/></div><div class="footer-access-list"><article v-for="door in connection.access ?? []" :key="door.id"><div class="footer-access-title"><strong>{{door.name}}</strong><small>{{door.zone}}</small></div><template v-if="connection.connected && door.available"><div class="footer-access-state"><b :class="door.open===true?'access-open':door.open===false?'access-closed':''">{{door.open===true?'Open':door.open===false?'Dicht':'Deur ?'}}</b><b :class="door.locked===true?'access-closed':door.locked===false?'access-open':''">{{door.locked===true?'Op slot':door.locked===false?'Niet op slot':'Slot ?'}}</b></div><small class="footer-access-time">{{accessChanged(door.contact_updated_at)}}</small></template><small v-else class="footer-access-time">Status niet beschikbaar</small></article></div><p class="footer-access-sync">Homey · elke 5 seconden</p></section>
+</footer>
 </div>
 <div v-if="settings" class="modal-backdrop" @click.self="settings=false"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="connection-title"><button class="icon-button close" aria-label="Close connection details" @click="settings=false"><X :size="20"/></button><span class="eyebrow">HOMEY PRO 2023</span><h2 id="connection-title">Connect your home</h2><p>Control every Homey light from its room or the All lights view.</p><p>Device states refresh every five seconds. Living-room climate comes from the linked sensor; energy reports come directly from Homey Energy and refresh every minute.</p><div class="connection-state"><WifiOff :size="18"/> {{connection.message}}</div><button class="primary" :disabled="checking" @click="checkConnection">{{checking ? 'Checking…' : 'Check connection'}}</button><div class="zone-tree" v-if="zoneTree.length"><h3>Rooms from Homey</h3><p>Names and hierarchy sync from Homey within one minute.</p><div v-for="zone in zoneTree" :key="zone.id" :style="{paddingLeft:`${zone.depth*16}px`}"><Layers :size="13"/>{{zone.name}}</div></div><div class="device-list" v-if="connection.devices.length"><h3>{{connection.devices.length}} live devices</h3><article v-for="device in connection.devices" :key="device.id"><strong>{{device.name}}</strong><small>{{device.zone_name || 'No zone'}} · {{device.available ? 'Available' : 'Unavailable'}}</small><small v-for="(measurement,capability) in device.measurements" :key="capability">{{capability}}: {{measurement.value ?? 'Unknown'}} {{measurement.units}}</small></article></div><button class="primary" @click="settings=false">Back to the house</button></section></div>
 <div v-if="showLights" class="modal-backdrop" @click.self="showLights=false"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="lights-title"><button class="icon-button close" aria-label="Close lights" @click="showLights=false"><X :size="20"/></button><span class="eyebrow">HOMEY LIGHTS</span><h2 id="lights-title">All lights</h2><p>Switch lights individually. States refresh from Homey every five seconds.</p><LightControls :devices="allLights" :connected="connection.connected" :busy="commandBusy" :pending="pending" :errors="commandError" @toggle="toggle"/></section></div>
 <FurnitureCatalogue v-if="showFurniture" :initial-floor="floor" :room-label="furnitureRoomLabel" @close="showFurniture=false"/>
 </template>
+
+<style>
+@media (min-width:1151px){
+ .dashboard>main{grid-template-columns:220px minmax(0,1fr)}
+ .dashboard .sidebar{padding-right:18px}
+ .dashboard .house-canvas{transform:translateX(7%)}
+ .dashboard-metrics{grid-template-columns:minmax(225px,1.08fr) minmax(150px,.72fr) minmax(150px,.72fr) minmax(145px,.64fr) minmax(230px,1fr);gap:10px}
+}
+.dashboard-metrics .metric{padding:16px 17px}
+.dashboard-metrics .reading{font-size:40px;margin-top:10px}
+.dashboard-metrics .reading>span{font-size:24px}
+.footer-lights{padding:0!important}
+.footer-lights-button{width:100%;height:100%;padding:16px 17px;background:transparent;text-align:left;border-radius:14px}
+.footer-lights-button .metric-top svg,.footer-access .metric-top svg{color:var(--orange)}
+.footer-lights-count{font-size:38px;font-weight:350;letter-spacing:-1.5px;margin:14px 0 2px}
+.footer-lights-count span{font-size:16px;color:#657180;margin-left:5px;letter-spacing:0}
+.footer-lights-button strong{display:block;font-size:12px;font-weight:550;margin-top:2px}
+.footer-lights-button p{font-size:9px;color:var(--muted);margin:6px 0 0}
+.footer-access{display:flex;flex-direction:column;min-width:0}
+.footer-access-list{display:grid;gap:7px;margin-top:10px;overflow:auto;min-height:0}
+.footer-access-list article{padding-bottom:6px;border-bottom:1px solid var(--line)}
+.footer-access-title{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.footer-access-title strong{font-size:10px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.footer-access-title small{font-size:8px;color:var(--muted);white-space:nowrap}
+.footer-access-state{display:flex;gap:10px;margin-top:4px;font-size:9px}
+.footer-access-state b{font-weight:500}
+.footer-access-time{display:block;margin-top:3px;font-size:7px;color:#596675;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.footer-access-sync{font-size:7px;color:#596675;margin:auto 0 0;padding-top:5px}
+@media (min-width:751px) and (max-width:1150px){
+ .dashboard-metrics{grid-template-columns:repeat(3,minmax(0,1fr));height:auto}
+ .dashboard-metrics .metric{height:175px}
+}
+</style>
