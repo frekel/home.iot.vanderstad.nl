@@ -31,7 +31,7 @@ return new class extends Migration
             }
 
             $bg45 = $required->get('45');
-            $floor = DB::table('house_floors')->where('floor_id', 'ground')->first();
+            $floor = DB::table('house_floors')->where('id', 'ground')->first();
             $topWall = DB::table('house_walls')
                 ->where('floor_id', 'ground')
                 ->where('name', 'outer-01')
