@@ -11,7 +11,17 @@
 
 ## House
 
-Main layout source: user-provided floorplan.svg. Preserve geometry and device positions, replace styling.
+The original layout was traced from the user-provided `floorplan.svg`, but the **database is now the single runtime source of truth**. The trace files and old JSON files may remain as historical/bootstrap material; frontend and Blender code must not contain their own copies of measured coordinates.
+
+Authoritative runtime tables:
+
+- `house_floors`: floor dimensions and display orientation.
+- `house_rooms`: room polygons and render metadata.
+- `house_walls`: named wall segments, thickness and exterior-layer direction.
+- `furniture_items`: furniture identity, render metadata, position, rotation and dimensions.
+
+Geometry changes and one-time data corrections are made with Laravel database migrations. Vue/Three.js reads `/dashboard/house`; the Blender worker receives the same database-backed house geometry and furniture in its build payload. Display mirroring is a floor property and must never be inferred from visual left/right wording.
+
 All supplied dimensions are internal wall-to-wall, in metres:
 
 | Floor | Width | Length |

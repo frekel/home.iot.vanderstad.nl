@@ -5,7 +5,7 @@ onFurnitureMounted(startFurniturePolling);onFurnitureUnmount(stopFurniturePollin
 import {computed,ref,onMounted,onBeforeUnmount} from 'vue';
 import {House, Layers, Moon, Lightbulb, Thermometer, Droplets, Zap, Settings, RotateCcw, MoveUpRight, ChevronRight, WifiOff, X, DoorOpen} from '@lucide/vue';
 import HouseScene from './components/HouseScene.vue';
-import house from './house.json';
+import {house} from './house';
 import FurnitureCatalogue from './components/FurnitureCatalogue.vue';
 import EnergyPanel, {type Energy} from './components/EnergyPanel.vue';
 import LightControls from './components/LightControls.vue';
@@ -88,7 +88,7 @@ async function toggle(id:string){
 <header><a class="brand" href="/"><span class="brand-icon"><House :size="23"/></span><span>Van der Stad<span class="brand-sub">HOME / ZUIDGORS 20</span></span></a><nav class="floor-nav" aria-label="Floors"><button v-for="f in floors" :key="f.id" :class="{active:floor===f.id}" @click="chooseFloor(f.id)"><Layers :size="15"/>{{f.label}}</button></nav><div class="header-right"><button class="lights-button" @click="showFurniture=true">Meubels</button><button class="lights-button" @click="showLights=true"><Lightbulb :size="16"/>All lights ({{allLights.length}})</button><span class="demo-badge"><span/>{{connection.connected ? 'HOMEY CONNECTED' : 'HOMEY OFFLINE'}}</span><button class="icon-button" aria-label="Connection settings" @click="settings=true"><Settings :size="19"/></button></div></header>
 <main>
 <aside class="sidebar">
-<p class="muted intro">{{current.label}} <span> / </span> 5.5 × {{current.length}} m</p>
+<p class="muted intro">{{current.label}} <span> / </span> {{current.width}} × {{current.length}} m</p>
 <EnergyPanel :energy="energy" compact/>
 <section class="side-section rooms"><div class="section-title"><House :size="15"/><span>HOMEY ROOMS</span><small>{{rooms.length}}</small></div><button v-for="r in rooms" :key="r.id" class="room-row" :class="{selected:selected===r.id}" @click="selected=r.id"><span class="room-dot" :class="{on:lights[r.id]}"/><span>{{r.label}}</span><ChevronRight :size="14"/></button></section>
 <div class="side-bottom"><WifiOff :size="16"/><div>{{connection.connected ? 'Homey connected' : 'Homey not connected'}}<small>Live devices refresh every 5 seconds</small></div></div>

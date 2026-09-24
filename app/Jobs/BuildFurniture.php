@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Services\FurnitureLayout;
+use App\Services\HouseLayout;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -22,8 +23,9 @@ class BuildFurniture implements ShouldQueue
 
     public function __construct(public int $revision) {}
 
-    public function handle(FurnitureLayout $layout): void
+    public function handle(FurnitureLayout $layout, ?HouseLayout $house = null): void
     {
+        $house ??= app(HouseLayout::class);
         $row = DB::table('furniture_layouts')->find(1);
         if ((int) $row->revision !== $this->revision || $row->status === 'ready') {
             return;
@@ -31,7 +33,10 @@ class BuildFurniture implements ShouldQueue
         DB::table('furniture_layouts')->where('id', 1)->update(['status' => 'building', 'started_at' => now(), 'updated_at' => now()]);
         $directory = config('furniture.build_path').'/'.$this->revision;
         File::ensureDirectoryExists($directory);
-        file_put_contents($directory.'/input.json', json_encode(['items' => $layout->items(json_decode($row->overrides, true, flags: JSON_THROW_ON_ERROR), true)], JSON_THROW_ON_ERROR));
+        file_put_contents($directory.'/input.json', json_encode([
+            'house' => $house->data(),
+            'items' => $layout->items(render: true),
+        ], JSON_THROW_ON_ERROR));
         $process = new Process([
             config('furniture.blender'), '--background', '--threads', '2', '--python-exit-code', '1', '--python', base_path('assets/blender/build_house.py'),
         ], base_path(), ['FURNITURE_INPUT' => $directory.'/input.json', 'FURNITURE_OUTPUT' => $directory], null, 900);

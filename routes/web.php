@@ -2,6 +2,7 @@
 
 use App\Services\FurnitureLayout;
 use App\Services\HomeyClient;
+use App\Services\HouseLayout;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -68,6 +69,10 @@ Route::get('/dashboard/energy', function (HomeyClient $homey) {
 
     return response()->json($energy, $energy['available'] ? 200 : 503)->header('Cache-Control', 'no-store');
 })->middleware('throttle:30,1');
+
+Route::get('/dashboard/house', function (HouseLayout $layout) {
+    return response()->json($layout->data())->header('Cache-Control', 'no-store');
+})->middleware('throttle:120,1');
 
 Route::get('/dashboard/furniture', function (FurnitureLayout $layout) {
     $state = $layout->state();

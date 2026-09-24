@@ -3,7 +3,7 @@ import { onMounted, onBeforeUnmount, watch, ref } from 'vue';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import house from '../house.json';
+import {house} from '../house';
 import modelVersions from '../model-versions.json';
 import {furnitureState} from '../furniture';
 const props=defineProps<{floor:string; selected:string; lights:Record<string,boolean>; aliases:Record<string,string>}>();
@@ -17,8 +17,8 @@ function dispose(root:THREE.Object3D){root.traverse(o=>{if(o instanceof THREE.Me
 function reset(){camera.position.set(8,11,12);controls.target.set(0,0,0);controls.update()}
 function top(){camera.position.set(0,16,.01);controls.target.set(0,0,0);controls.update()}
 defineExpose({reset,top});
-// Plan X/Y corresponds to Three.js X/-Z; Y is the vertical axis in Three.js.
-function mirrorPlan(object:THREE.Object3D){object.scale.set(props.floor==='ground'?1:-1,1,props.floor==='ground'?-1:1)}
+// Plan X/Y corresponds to Three.js X/-Z; display_mirrored is stored with each floor.
+function mirrorPlan(object:THREE.Object3D){const mirrored=house.floors.find(f=>f.id===props.floor)?.display_mirrored??false;object.scale.set(mirrored?-1:1,1,mirrored?1:-1)}
 function cutawayMaterial(source:THREE.Material){
  const material=source.clone();
  material.clippingPlanes=[furnitureClipPlane];

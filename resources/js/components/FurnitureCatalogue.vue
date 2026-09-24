@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import {computed,ref} from 'vue';
+import {computed,ref,watch,onBeforeUnmount} from 'vue';
 import {X} from '@lucide/vue';
-import house from '../house.json';
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {house} from '../house';
 import {furnitureState,furnitureLoadError,refreshFurniture,type FurnitureItem} from '../furniture';
 const props=defineProps<{initialFloor:string;roomLabel:(id:string)=>string}>();
 defineEmits<{close:[]}>();
@@ -14,13 +16,67 @@ function reference(i:Item){return `${prefixes[i.floor]}-${i.id==='levi-tv-cabine
 function label(i:Item){if(i.kind==='wall_cabinet_set')return `Drie hangkastjes · elk ${Math.round(i.width*100/3)} cm breed`;if(i.kind==='split_door_cabinet')return `Kast · deuren ${Math.round(i.width*60)} / ${Math.round(i.width*40)} cm`;return i.id==='levi-tv-cabinet'?'Kast aan voeteneinde V1-244':i.id==='levi-tv'?'Levi · tv aan muur':names[i.kind]??i.kind}
 function contains(p:number[][],x:number,y:number){let inside=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const a=p[i]!,b=p[j]!;if((a[1]!>y)!==(b[1]!>y)&&x<(b[0]!-a[0]!)*(y-a[1]!)/(b[1]!-a[1]!)+a[0]!)inside=!inside}return inside}
 function room(i:Item){const r=house.floors.find(f=>f.id===i.floor)?.rooms.find(r=>contains(r.polygon,i.x,i.y));return r?props.roomLabel(r.id):'Plaatsing controleren'}
-function position(x:number,y:number){return [floor.value==='ground'?x:-x,floor.value==='ground'?y:-y]}
-function footprint(i:Item){const a=i.rotation*Math.PI/180;return [[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx,sy])=>{const x=sx!*i.width/2,y=sy!*i.depth/2;return position(i.x+x*Math.cos(a)-y*Math.sin(a),i.y+x*Math.sin(a)+y*Math.cos(a)).join(',')}).join(' ')}
+function position(x:number,y:number){const mirrored=house.floors.find(f=>f.id===floor.value)?.display_mirrored??false;return mirrored?[-x,-y]:[x,y]}
+function itemKey(i:Item){return `${i.floor}:${i.id}`}
+function databaseFootprint(i:Item){const a=i.rotation*Math.PI/180;return [[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx,sy])=>{const x=sx!*i.width/2,y=sy!*i.depth/2;return position(i.x+x*Math.cos(a)-y*Math.sin(a),i.y+x*Math.sin(a)+y*Math.cos(a)).join(',')}).join(' ')}
+const modelFootprints=ref<Record<string,string>>({});
+const modelCenters=ref<Record<string,[number,number]>>({});
+let footprintRequest=0;
+function convexHull(points:[number,number][]):[number,number][]{
+ const unique=[...new Map(points.map(p=>[`${p[0].toFixed(5)},${p[1].toFixed(5)}`,p])).values()].sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+ if(unique.length<=2)return unique;
+ const cross=(o:[number,number],a:[number,number],b:[number,number])=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+ const lower:[number,number][]=[];for(const p of unique){while(lower.length>=2&&cross(lower[lower.length-2]!,lower[lower.length-1]!,p)<=0)lower.pop();lower.push(p)}
+ const upper:[number,number][]=[];for(let n=unique.length-1;n>=0;n--){const p=unique[n]!;while(upper.length>=2&&cross(upper[upper.length-2]!,upper[upper.length-1]!,p)<=0)upper.pop();upper.push(p)}
+ lower.pop();upper.pop();return [...lower,...upper];
+}
+function disposeModel(root:THREE.Object3D){root.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const material of Array.isArray(o.material)?o.material:[o.material])material.dispose()}})}
+async function refreshModelFootprints(){
+ const request=++footprintRequest;
+ const state=furnitureState.value;
+ const modelUrl=state?.models[floor.value];
+ if(!state||!modelUrl||state.status!=='ready'||state.model_revision!==state.revision){modelFootprints.value={};modelCenters.value={};return}
+ try{
+  const gltf=await new GLTFLoader().loadAsync(modelUrl);
+  if(request!==footprintRequest){disposeModel(gltf.scene);return}
+  const floorData=house.floors.find(f=>f.id===floor.value);
+  const mirrored=floorData?.display_mirrored??false;
+  gltf.scene.scale.set(mirrored?-1:1,1,mirrored?1:-1);
+  gltf.scene.updateMatrixWorld(true);
+  const footprints:Record<string,string>={};
+  const centers:Record<string,[number,number]>={};
+  const point=new THREE.Vector3();
+  gltf.scene.traverse(root=>{
+   const sourceId=root.userData?.source_id;
+   if(sourceId===undefined||sourceId===null||!root.name.startsWith(`furniture__${floor.value}__`))return;
+   const points:[number,number][]=[];
+   root.traverse(child=>{
+    if(!(child instanceof THREE.Mesh))return;
+    const attribute=child.geometry.getAttribute('position');
+    if(!attribute)return;
+    for(let n=0;n<attribute.count;n++){
+     point.fromBufferAttribute(attribute,n).applyMatrix4(child.matrixWorld);
+     points.push([point.x,point.z]);
+    }
+   });
+   const key=`${floor.value}:${String(sourceId)}`;
+   const hull=convexHull(points);
+   if(hull.length>=3)footprints[key]=hull.map(p=>p.join(',')).join(' ');
+   const center=new THREE.Vector3().setFromMatrixPosition(root.matrixWorld);
+   centers[key]=[center.x,center.z];
+  });
+  modelFootprints.value=footprints;modelCenters.value=centers;
+  disposeModel(gltf.scene);
+ }catch{if(request===footprintRequest){modelFootprints.value={};modelCenters.value={}}}
+}
+function footprint(i:Item){return modelFootprints.value[itemKey(i)]??databaseFootprint(i)}
 const current=computed(()=>house.floors.find(f=>f.id===floor.value)!);
 const items=computed<Item[]>(()=>(furnitureState.value?.items??[]).filter(i=>i.floor===floor.value));
 const chosen=computed(()=>items.value.find(i=>reference(i)===selected.value));
 function isSelected(i:Item){return selected.value===reference(i)||!!(chosen.value?.group&&i.group===chosen.value.group)}
-const markers=computed(()=>{const used:number[][]=[];return items.value.map(i=>{const p=position(i.x,i.y);while(used.some(u=>Math.hypot(u[0]!-p[0]!,u[1]!-p[1]!)<.36)){p[0]!+=.3;p[1]!-=.25}used.push([...p]);return {item:i,x:p[0]!,y:p[1]!}})});
+const markers=computed(()=>items.value.map(i=>{const p=modelCenters.value[itemKey(i)]??position(i.x,i.y);return {item:i,x:p[0]!,y:p[1]!}}));
+watch(()=>[floor.value,furnitureState.value?.models[floor.value],furnitureState.value?.revision,furnitureState.value?.model_revision,furnitureState.value?.status],()=>{void refreshModelFootprints()},{immediate:true});
+onBeforeUnmount(()=>{footprintRequest++});
 function choose(i:Item){selected.value=reference(i);document.getElementById('furniture-'+reference(i))?.scrollIntoView({block:'nearest',behavior:'smooth'})}
 function dimensions(i:Item){return [i.width,i.depth,i.height].map(v=>Math.round(v*100)).join(' × ')+' cm'}
 type Dimension='width'|'depth'|'height'|'base_z';
@@ -66,9 +122,9 @@ async function build(){
  <div class="furniture-columns"><div class="furniture-map">
  <svg :viewBox="`${-current.length/2-0.7} -3.6 ${current.length+1.4} 7.2`" role="img" :aria-label="`Meubelkaart ${floorNames[floor]}`">
   <polygon v-for="r in current.rooms" :key="r.id" :points="r.polygon.map(p=>position(p[0]!,p[1]!).join(',')).join(' ')" fill="#242e39" stroke="#46515f" stroke-width=".015"/>
-  <line v-for="(wall,n) in current.walls" :key="n" :x1="position(wall[0]!,wall[1]!)[0]" :y1="position(wall[0]!,wall[1]!)[1]" :x2="position(wall[2]!,wall[3]!)[0]" :y2="position(wall[2]!,wall[3]!)[1]" stroke="#bcc5cf" stroke-width=".065"/>
+  <line v-for="wall in current.walls" :key="wall.id" :x1="position(wall.x1,wall.y1)[0]" :y1="position(wall.x1,wall.y1)[1]" :x2="position(wall.x2,wall.y2)[0]" :y2="position(wall.x2,wall.y2)[1]" stroke="#bcc5cf" :stroke-width="wall.thickness"/>
   <polygon v-for="i in items" :key="i.id" :points="footprint(i)" :fill="isSelected(i)?'#ff8a1860':'#8b735544'" :stroke="isSelected(i)?'#ffad55':'#aa9375'" stroke-width=".025" @click="choose(i)"><title>{{reference(i)}} · {{label(i)}}</title></polygon>
-  <g v-for="m in markers" :key="m.item.id" role="button" tabindex="0" :aria-label="`${reference(m.item)} ${label(m.item)}`" @click="choose(m.item)" @keydown.enter.prevent="choose(m.item)" @keydown.space.prevent="choose(m.item)" style="cursor:pointer"><line :x1="position(m.item.x,m.item.y)[0]" :y1="position(m.item.x,m.item.y)[1]" :x2="m.x" :y2="m.y" stroke="#dfaf70" stroke-width=".018"/><circle :cx="m.x" :cy="m.y" r=".19" :fill="isSelected(m.item)?'#ff8a18':'#131b24'" stroke="#ffaf59" stroke-width=".017"/><text :x="m.x" :y="m.y+.047" text-anchor="middle" font-size=".135" :fill="isSelected(m.item)?'#101419':'#fff'">{{reference(m.item).split('-')[1]}}</text></g>
+  <g v-for="m in markers" :key="m.item.id" role="button" tabindex="0" :aria-label="`${reference(m.item)} ${label(m.item)}`" @click="choose(m.item)" @keydown.enter.prevent="choose(m.item)" @keydown.space.prevent="choose(m.item)" style="cursor:pointer"><circle :cx="m.x" :cy="m.y" r=".19" :fill="isSelected(m.item)?'#ff8a18':'#131b24'" stroke="#ffaf59" stroke-width=".017"/><text :x="m.x" :y="m.y+.047" text-anchor="middle" font-size=".135" :fill="isSelected(m.item)?'#101419':'#fff'">{{reference(m.item).split('-')[1]}}</text></g>
  </svg>
  <p>Kaartnummers beginnen met <strong>{{prefixes[floor]}}-</strong>. De kaart volgt de spiegeling van de 3D-plattegrond.</p>
  <div class="furniture-selection" aria-live="polite"><template v-if="chosen"><strong>{{reference(chosen)}} · {{label(chosen)}}</strong><p>{{room(chosen)}} · {{dimensions(chosen)}}</p><p v-if="chosen.group"><strong>{{chosen.group}} · {{chosen.group_name}}</strong> — {{items.filter(i=>i.group===chosen?.group).map(reference).join(', ')}}. Geef dit groepsnummer door om alles samen te wijzigen.</p><fieldset class="furniture-fields" :disabled="busy || !furnitureState"><label v-for="field in fields" :key="field.key">{{field.label}} (cm)<input type="number" step="0.1" :min="field.min" :max="field.max" :value="value(chosen,field.key)" @input="edit(chosen,field.key,$event)"/></label></fieldset><p>Maten wijzigen rond het middelpunt van het meubel. Hoge meubels kunnen in de plattegrond op muurhoogte worden afgesneden.</p><p>Geef bijvoorbeeld door: “{{reference(chosen)}} 20 cm naar rechts op de meubelkaart.”</p></template><span v-else>Selecteer een meubel voor het volledige nummer.</span></div>
