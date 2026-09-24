@@ -5,6 +5,9 @@ import {house} from './house';
 import {furnitureState,refreshFurniture,type FurnitureItem,type FurnitureState} from './furniture';
 
 type Dimension='width'|'depth'|'height';
+type Position='x'|'y'|'z';
+type NumericField=Dimension|Position;
+type MeasureForm=Record<NumericField,string>&{color:string};
 type RoomOption={key:string;id:string;floor:string;label:string;floorLabel:string;items:FurnitureItem[]};
 type Zone={name:string;parent:string|null};
 type Layout={floors:Record<string,string>;rooms:Record<string,string>;aliases?:Record<string,string>};
@@ -12,15 +15,16 @@ type HomeStatus={zones?:Record<string,Zone>;layout?:Layout};
 
 const prefixes:Record<string,string>={ground:'BG',upper:'V1',attic:'Z'};
 const floorNames:Record<string,string>={ground:'Begane grond',upper:'Eerste verdieping',attic:'Zolder'};
-const names:Record<string,string>={sofa:'Bank',armchair:'Fauteuil',cabinet:'Kast',corner_sofa:'Hoekbank',split_door_cabinet:'Kast · deuren 60 / 40 cm',open_shelving:'Open plankenkast',dog_house:'Hondenhok',wall_cabinet_set:'Drie hangkastjes',american_fridge:'Amerikaanse koelkast',shoe_rack:'Schoenenrek',breakfast_bar:'Bar',wall_shelf:'Wandplank',drawer_cabinet:'Ladekastje',rotating_mirror_cabinet:'Draaikast met spiegel',bed:'Bed',tv:'Tv',chair:'Stoel',fridge:'Koelkast',cooker:'Fornuis',sink:'Spoelbak / wastafel',toilet:'Toilet',bath:'Bad',plant:'Plant',computer:'Computer',table:'Tafel / bureau',washer:'Wasmachine / droger',open_wardrobe:'Open kledingkast',winder_stairs:'Halfslagtrap',projector_screen:'Beamerscherm',shower:'Douche',water_heater:'Boiler',heating_boiler:'Cv-ketel',infrared_panel:'Infraroodpaneel',mirror:'Wandspiegel',basket_cabinet:'Ladekast met mandjes'};
+const names:Record<string,string>={sofa:'Bank',armchair:'Fauteuil',cabinet:'Kast',corner_sofa:'Hoekbank',split_door_cabinet:'Kast · deuren 60 / 40 cm',open_shelving:'Open plankenkast',dog_house:'Hondenhok',wall_cabinet_set:'Drie hangkastjes',american_fridge:'Amerikaanse koelkast',shoe_rack:'Schoenenrek',breakfast_bar:'Bar',wall_shelf:'Wandplank',drawer_cabinet:'Ladekastje',rotating_mirror_cabinet:'Draaikast met spiegel',bed:'Bed',tv:'Tv',chair:'Stoel',fridge:'Koelkast',cooker:'Fornuis',sink:'Spoelbak / wastafel',toilet:'Toilet',bath:'Bad',plant:'Plant',computer:'Computer',table:'Tafel / bureau',washer:'Wasmachine / droger',open_wardrobe:'Open kledingkast',winder_stairs:'Halfslagtrap',projector_screen:'Beamerscherm',shower:'Douche',water_heater:'Boiler',heating_boiler:'Cv-ketel',infrared_panel:'Infraroodpaneel',mirror:'Wandspiegel',basket_cabinet:'Ladekast met mandjes',trash_bin:'Prullenbak',countertop:'Keukenblad'};
 const limits:Record<Dimension,{min:number;max:number}>={width:{min:5,max:1100},depth:{min:1,max:550},height:{min:1,max:400}};
+const positionLimits:Record<Position,{min:number;max:number}>={x:{min:-2000,max:2000},y:{min:-2000,max:2000},z:{min:0,max:500}};
 const measuredKey='home-iot-measure-mode-measured-v1';
 const skippedKey='home-iot-measure-mode-skipped-v1';
 
 const loading=ref(true),saving=ref(false),building=ref(false),error=ref(''),notice=ref('');
 const roomKey=ref(''),itemIndex=ref(0),roundFinished=ref(false);
 const measured=ref<Set<string>>(new Set()),skipped=ref<Set<string>>(new Set());
-const form=ref<Record<Dimension,string>>({width:'',depth:'',height:''});
+const form=ref<MeasureForm>({width:'',depth:'',height:'',x:'',y:'',z:'',color:''});
 const zoneNames=ref<Record<string,Zone>>({});
 const layout=ref<Layout>({floors:{},rooms:{},aliases:{}});
 
@@ -35,7 +39,7 @@ function cm(value:number){return String(Math.round(value*100000)/1000)}
 function csrf(){return document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content??''}
 function mapPoint(x:number,y:number,floor:string){const plan=house.floors.find(f=>f.id===floor);return plan?.display_mirrored?[-x,-y]:[x,y]}
 function footprint(i:FurnitureItem){const a=i.rotation*Math.PI/180;return [[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx,sy])=>{const x=sx!*i.width/2,y=sy!*i.depth/2;return mapPoint(i.x+x*Math.cos(a)-y*Math.sin(a),i.y+x*Math.sin(a)+y*Math.cos(a),i.floor).join(',')}).join(' ')}
-function clearField(key:Dimension){form.value[key]='';error.value=''}
+function clearField(key:NumericField){form.value[key]='';error.value=''}
 async function refreshHomeyLabels(){
  try{
   const response=await fetch('/dashboard/status',{headers:{Accept:'application/json'},signal:AbortSignal.timeout(12000)});
@@ -98,10 +102,10 @@ function loadProgress(){
  try{measured.value=new Set(JSON.parse(localStorage.getItem(measuredKey)??'[]'));skipped.value=new Set(JSON.parse(localStorage.getItem(skippedKey)??'[]'))}catch{measured.value=new Set();skipped.value=new Set()}
 }
 function persist(){localStorage.setItem(measuredKey,JSON.stringify([...measured.value]));localStorage.setItem(skippedKey,JSON.stringify([...skipped.value]))}
-function resetProgress(){if(!confirm('Nieuwe meetronde starten? Alleen de vinkjes en overgeslagen status worden gewist; opgeslagen maten blijven behouden.'))return;measured.value=new Set();skipped.value=new Set();persist();roundFinished.value=false;roomKey.value=rooms.value[0]?.key??'';itemIndex.value=0;notice.value='Nieuwe meetronde gestart.'}
+function resetProgress(){if(!confirm('Nieuwe meetronde starten? Alleen de vinkjes en overgeslagen status worden gewist; opgeslagen maten, positie en kleur blijven behouden.'))return;measured.value=new Set();skipped.value=new Set();persist();roundFinished.value=false;roomKey.value=rooms.value[0]?.key??'';itemIndex.value=0;notice.value='Nieuwe meetronde gestart.'}
 function setMeasured(id:string){const next=new Set(measured.value);next.add(id);measured.value=next;const skip=new Set(skipped.value);skip.delete(id);skipped.value=skip;persist()}
 function setSkipped(id:string){const next=new Set(skipped.value);next.add(id);skipped.value=next;const done=new Set(measured.value);done.delete(id);measured.value=done;persist()}
-function fillForm(){const i=current.value;if(!i)return;form.value={width:cm(i.width),depth:cm(i.depth),height:cm(i.height)};error.value='';notice.value=''}
+function fillForm(){const i=current.value;if(!i)return;form.value={width:cm(i.width),depth:cm(i.depth),height:cm(i.height),x:cm(i.x),y:cm(i.y),z:cm(i.base_z),color:i.color??''};error.value='';notice.value=''}
 function chooseRoom(){itemIndex.value=0;roundFinished.value=false;fillForm()}
 function next(){
  if(!room.value)return;
@@ -137,9 +141,14 @@ async function saveAndNext(){
  const previousRoomKey=roomKey.value,previousIndex=itemIndex.value;
  const values={} as Record<Dimension,number>;
  for(const key of ['width','depth','height'] as Dimension[]){const value=Number(form.value[key]);if(!Number.isFinite(value)||value<limits[key].min||value>limits[key].max){error.value=`${key==='width'?'Breedte':key==='depth'?'Diepte':'Hoogte'} moet tussen ${limits[key].min} en ${limits[key].max} cm liggen.`;return}values[key]=value}
+ const positions={} as Record<Position,number>;
+ for(const key of ['x','y','z'] as Position[]){const value=Number(form.value[key]);if(!Number.isFinite(value)||value<positionLimits[key].min||value>positionLimits[key].max){error.value=`${key.toUpperCase()} moet tussen ${positionLimits[key].min} en ${positionLimits[key].max} cm liggen.`;return}positions[key]=value}
+ if(values.height+positions.z>500){error.value='Hoogte + Z mag maximaal 500 cm zijn.';return}
+ const color=form.value.color.trim();
+ if(color&&!/^#[0-9a-f]{6}$/i.test(color)){error.value='Kleur moet leeg zijn of een hexkleur zoals #ffffff.';return}
  saving.value=true;error.value='';notice.value='';
  try{
-  const response=await fetch('/dashboard/furniture',{method:'PUT',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf()},body:JSON.stringify({revision:state.revision,items:[{floor:item.floor,id:item.id,width:values.width,depth:values.depth,height:values.height,base_z:Number(cm(item.base_z))}]}),signal:AbortSignal.timeout(20000)});
+  const response=await fetch('/dashboard/furniture',{method:'PUT',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf()},body:JSON.stringify({revision:state.revision,items:[{floor:item.floor,id:item.id,width:values.width,depth:values.depth,height:values.height,x:positions.x,y:positions.y,base_z:positions.z,color:color||null}]}),signal:AbortSignal.timeout(20000)});
   const data=await response.json();
   if(!response.ok)throw new Error(response.status===409?'De meubelgegevens zijn ondertussen gewijzigd. Herlaad de meetmodus en probeer opnieuw.':data.errors?Object.values(data.errors).flat().join(' '):data.message??'Opslaan mislukt.');
   furnitureState.value=data as FurnitureState;setMeasured(reference(item));advanceAfterSave(previousRoomKey,previousIndex);
@@ -171,8 +180,8 @@ onMounted(async()=>{loadProgress();try{await Promise.all([refreshFurniture(),ref
   <section v-else-if="roundFinished" class="measure-card measure-finished">
    <span class="measure-finished-icon"><Check :size="28"/></span>
    <h2>{{remainingCount ? 'Nog niet helemaal klaar' : 'Meetronde afgerond'}}</h2>
-   <p v-if="remainingCount">{{remainingCount}} meubels zijn nog niet gemeten of overgeslagen. Je opgeslagen maten zijn al bewaard.</p>
-   <p v-else>{{measuredCount}} meubels gemeten<span v-if="skippedCount"> en {{skippedCount}} overgeslagen</span>. Je maten zijn al opgeslagen.</p>
+   <p v-if="remainingCount">{{remainingCount}} meubels zijn nog niet gemeten of overgeslagen. Je opgeslagen gegevens zijn al bewaard.</p>
+   <p v-else>{{measuredCount}} meubels gemeten<span v-if="skippedCount"> en {{skippedCount}} overgeslagen</span>. Je gegevens zijn al opgeslagen.</p>
    <button v-if="remainingCount" class="measure-primary" @click="firstUnprocessed"><Ruler :size="19"/>Ga naar eerste open meubel</button>
    <button v-else-if="modelOutdated" class="measure-primary" :disabled="buildBusy" @click="build"><WandSparkles :size="19"/>{{buildBusy?'Plattegrond wordt opgebouwd…':'Plattegrond bijwerken'}}</button>
    <p v-else>De 3D-plattegrond is al bijgewerkt met de huidige revisie.</p>
@@ -203,13 +212,26 @@ onMounted(async()=>{loadProgress();try{await Promise.all([refreshFurniture(),ref
      </svg>
     </div>
 
+    <p class="measure-hint"><strong>Afmetingen</strong> · breedte × diepte × hoogte in cm.</p>
     <fieldset class="measure-fields" :disabled="saving">
      <label><span>Breedte</span><div><input v-model="form.width" inputmode="decimal" type="number" min="5" max="1100" step="0.1" autocomplete="off" @focus="clearField('width')"/><b>cm</b></div></label>
      <label><span>Diepte</span><div><input v-model="form.depth" inputmode="decimal" type="number" min="1" max="550" step="0.1" autocomplete="off" @focus="clearField('depth')"/><b>cm</b></div></label>
      <label><span>Hoogte</span><div><input v-model="form.height" inputmode="decimal" type="number" min="1" max="400" step="0.1" autocomplete="off" @focus="clearField('height')"/><b>cm</b></div></label>
     </fieldset>
 
-    <p class="measure-hint">Meet breedte × diepte × hoogte. Tik een veld aan: de oude waarde wordt meteen gewist zodat je direct kunt typen of dicteren.</p>
+    <p class="measure-hint"><strong>Positie</strong> · X, Y en Z zijn de echte databasecoördinaten in cm. Z is de afstand vanaf de vloer.</p>
+    <fieldset class="measure-fields" :disabled="saving">
+     <label><span>X-as</span><div><input v-model="form.x" inputmode="decimal" type="number" min="-2000" max="2000" step="0.1" autocomplete="off" @focus="clearField('x')"/><b>cm</b></div></label>
+     <label><span>Y-as</span><div><input v-model="form.y" inputmode="decimal" type="number" min="-2000" max="2000" step="0.1" autocomplete="off" @focus="clearField('y')"/><b>cm</b></div></label>
+     <label><span>Z-as</span><div><input v-model="form.z" inputmode="decimal" type="number" min="0" max="500" step="0.1" autocomplete="off" @focus="clearField('z')"/><b>cm</b></div></label>
+    </fieldset>
+
+    <p class="measure-hint"><strong>Kleur</strong> · optioneel als hexcode, bijvoorbeeld <code>#ffffff</code> voor wit. Leeg laten gebruikt de standaardkleur van het meubel.</p>
+    <fieldset class="measure-fields" :disabled="saving">
+     <label><span>Kleur</span><div><input v-model="form.color" type="text" maxlength="7" placeholder="#RRGGBB" autocomplete="off"/></div></label>
+    </fieldset>
+
+    <p class="measure-hint">Tik een numeriek veld aan: de oude waarde wordt meteen gewist zodat je direct kunt typen of dicteren.</p>
     <button class="measure-primary" :disabled="saving" @click="saveAndNext"><Check :size="20"/>{{saving?'Opslaan…':'Opslaan & volgende'}}</button>
     <button class="measure-skip" :disabled="saving" @click="skip"><SkipForward :size="18"/>Overslaan</button>
    </section>
