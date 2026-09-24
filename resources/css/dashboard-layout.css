@@ -45,11 +45,15 @@
     letter-spacing: .45px;
   }
 
+  /* Every card title uses the exact same typography. */
   #app .dashboard .dashboard-metrics .section-title > span,
-  #app .dashboard .dashboard-metrics .metric-top .eyebrow::before {
+  #app .dashboard .dashboard-metrics .metric-top .eyebrow::before,
+  #app .dashboard .footer-access-title strong {
     color: #d9e0e8;
     font-size: 10px;
     font-weight: 550;
+    line-height: 1.2;
+    letter-spacing: .45px;
   }
 
   #app .dashboard .dashboard-metrics > .climate:nth-of-type(2) .eyebrow,
@@ -166,15 +170,14 @@
   }
 
   #app .dashboard .footer-access-title {
+    position: relative;
     display: block;
+    padding-right: 30px;
+    min-height: 22px;
   }
 
   #app .dashboard .footer-access-title strong {
     display: block;
-    color: #d9e0e8;
-    font-size: 11px;
-    font-weight: 550;
-    letter-spacing: .2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -185,6 +188,31 @@
     margin-top: 5px;
     color: var(--muted);
     font-size: 8px;
+  }
+
+  /* Small line-art door icon, matching the orange icons on the other cards. */
+  #app .dashboard .footer-access-title::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 2px;
+    width: 12px;
+    height: 17px;
+    border: 1.7px solid var(--orange);
+    border-bottom-width: 2px;
+    border-radius: 2px 2px 0 0;
+  }
+
+  #app .dashboard .footer-access-title::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    top: 8px;
+    right: 4px;
+    width: 2.5px;
+    height: 2.5px;
+    border-radius: 50%;
+    background: var(--orange);
   }
 
   #app .dashboard .footer-access-state {
