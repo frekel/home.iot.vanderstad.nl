@@ -30,7 +30,26 @@ brick=mat('Outer brick',(0.37,0.20,0.13));cavity=mat('Insulated cavity section',
 build_furniture=runpy.run_path(str(ROOT/'assets/blender/build_furniture.py'))['build_furniture']
 custom_module=runpy.run_path(str(ROOT/'assets/blender/build_custom_furniture.py'))
 build_custom_furniture=custom_module['build_custom_furniture'];custom_kinds=custom_module['CUSTOM_KINDS']
-palette={'oak':mat('Furniture oak',(.52,.36,.22)),'fabric':mat('Warm grey upholstery',(.22,.25,.25)),'fabric_light':mat('Cushion fabric',(.38,.41,.39)),'linen':mat('Cotton linen',(.86,.84,.76)),'blue':mat('Muted blue bedding',(.21,.35,.43)),'dark':mat('Graphite',(.035,.04,.045)),'screen':mat('TV glass',(.018,.035,.05)),'ceramic':mat('Porcelain',(.88,.88,.83)),'basin':mat('Recessed basin',(.41,.47,.47)),'green':mat('Foliage',(.12,.28,.08)),'basket':mat('Woven baskets',(.48,.37,.24)),'mirror':mat('Mirror glass',(.58,.69,.74)),'stone':tile,'metal':mat('Brushed metal',(.35,.38,.4))}
+palette={
+ 'oak':mat('Furniture oak',(.52,.36,.22)),
+ 'fabric':mat('Warm grey upholstery',(.22,.25,.25)),
+ 'fabric_light':mat('Cushion fabric',(.38,.41,.39)),
+ 'linen':mat('Cotton linen',(.86,.84,.76)),
+ 'blue':mat('Muted blue bedding',(.21,.35,.43)),
+ 'dark':mat('Graphite',(.035,.04,.045)),
+ 'screen':mat('TV glass',(.018,.035,.05)),
+ 'ceramic':mat('Porcelain',(.88,.88,.83)),
+ 'basin':mat('Recessed basin',(.41,.47,.47)),
+ 'green':mat('Foliage',(.12,.28,.08)),
+ 'basket':mat('Woven baskets',(.48,.37,.24)),
+ 'mirror':mat('Mirror glass',(.58,.69,.74)),
+ 'stone':tile,
+ 'metal':mat('Brushed metal',(.35,.38,.4)),
+ 'shoe_red':mat('Shoe red',(.48,.09,.07)),
+ 'shoe_blue':mat('Shoe blue',(.08,.20,.42)),
+ 'shoe_tan':mat('Shoe tan',(.46,.30,.16)),
+ 'shoe_white':mat('Shoe white',(.78,.79,.77)),
+}
 custom_colour_materials={}
 
 def furniture_colour(value):
@@ -38,6 +57,11 @@ def furniture_colour(value):
  if key not in custom_colour_materials:
   custom_colour_materials[key]=mat('Furniture colour '+key,hex_rgb(key))
  return custom_colour_materials[key]
+
+def set_material(obj, material):
+ if getattr(obj,'data',None) is None or not hasattr(obj.data,'materials'):
+  return
+ obj.data.materials.clear();obj.data.materials.append(material)
 
 for f in data['floors']:
  bpy.ops.object.select_all(action='DESELECT');objects=[]
@@ -75,10 +99,34 @@ for f in data['floors']:
  objects.extend(build_furniture(regular,f,palette))
  objects.extend(build_custom_furniture(furniture,f,palette))
 
+ # Give composite furniture its fixed/detail materials before the optional
+ # user-selected body colour is applied below.
+ for item in furniture:
+  if item['floor']!=f['id']:
+   continue
+  prefix=f"furniture__{f['id']}__{item['id']}__"
+  meshes=[o for o in objects if o.name.startswith(prefix) and getattr(o,'data',None) is not None and hasattr(o.data,'materials')]
+  kind=item.get('kind')
+
+  if kind=='shoe_rack':
+   shoes=[o for o in meshes if '__shoe' in o.name]
+   shoe_materials=[palette['shoe_red'],palette['shoe_blue'],palette['shoe_tan'],palette['shoe_white']]
+   for n,o in enumerate(shoes):
+    set_material(o,shoe_materials[n%len(shoe_materials)])
+
+  elif kind=='cooker':
+   for o in meshes:
+    if '__hob' in o.name or '__burner' in o.name:
+     set_material(o,palette['metal'])
+
+  elif kind=='sink':
+   for o in meshes:
+    if '__basin' in o.name or '__tap' in o.name:
+     set_material(o,palette['metal'])
+
  # Item-specific appearance is data. A user-defined hex colour takes priority
- # over the generic material palette override. Composite pieces can keep their
- # own accent/detail colours: for Skadis filament boards the chosen colour
- # applies to the board only, while holes, spool hubs and filament stay intact.
+ # over the generic material palette override. For composite furniture, only
+ # the main body receives that colour; detail materials remain intact.
  for item in furniture:
   if item['floor']!=f['id']:
    continue
@@ -95,9 +143,19 @@ for f in data['floors']:
   for o in objects:
    if not (o.name.startswith(prefix) and getattr(o,'data',None) is not None and hasattr(o.data,'materials')):
     continue
-   if item.get('color') and item.get('model_kind')=='skadis_filament' and not o.name.endswith('__pegboard'):
-    continue
-   o.data.materials.clear();o.data.materials.append(material)
+   if item.get('color'):
+    kind=item.get('kind')
+    model_kind=item.get('model_kind')
+    name=o.name
+    if model_kind=='skadis_filament' and not name.endswith('__pegboard'):
+     continue
+    if kind=='shoe_rack' and not ('__side' in name or '__slat' in name):
+     continue
+    if kind in ['cooker','sink'] and '__body' not in name:
+     continue
+    if kind=='bed' and not ('__frame' in name or '__headboard' in name):
+     continue
+   set_material(o,material)
 
  bpy.ops.object.select_all(action='DESELECT')
  for o in objects:o.select_set(True)
