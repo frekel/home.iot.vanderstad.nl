@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AtticBoxInventoryController;
 use App\Services\FurnitureLayout;
 use App\Services\HomeyClient;
 use App\Services\HouseLayout;
@@ -9,6 +10,17 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'dashboard');
 Route::view('/measure', 'dashboard');
+
+Route::prefix('inventory/zolder/kisten')->name('inventory.attic-boxes.')->group(function () {
+    Route::get('/', [AtticBoxInventoryController::class, 'index'])->name('index');
+    Route::post('/open', [AtticBoxInventoryController::class, 'open'])->name('open');
+    Route::get('/{number}', [AtticBoxInventoryController::class, 'show'])->whereNumber('number')->name('show');
+    Route::post('/{number}/items', [AtticBoxInventoryController::class, 'storeItem'])->whereNumber('number')->name('items.store');
+    Route::put('/{number}/items/{item}', [AtticBoxInventoryController::class, 'updateItem'])->whereNumber('number')->whereNumber('item')->name('items.update');
+    Route::delete('/{number}/items/{item}', [AtticBoxInventoryController::class, 'destroyItem'])->whereNumber('number')->whereNumber('item')->name('items.destroy');
+    Route::post('/{number}/photos', [AtticBoxInventoryController::class, 'storePhotos'])->whereNumber('number')->name('photos.store');
+});
+
 Route::get('/dashboard/status', function (HomeyClient $homey) {
     $empty = ['connected' => false, 'devices' => [], 'access' => $homey->access([]), 'rooms' => $homey->rooms([]), 'layout' => config('homey_layout'), 'zones' => []];
     if (! $homey->configured()) {
