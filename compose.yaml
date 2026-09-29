@@ -22,6 +22,8 @@ services:
       HOMEY_API_KEY: ${HOMEY_API_KEY:-}
       HOMEY_LIVING_LIGHT_ID: ${HOMEY_LIVING_LIGHT_ID:-}
       HOMEY_LIVING_CLIMATE_ID: ${HOMEY_LIVING_CLIMATE_ID:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_INVENTORY_MODEL: ${OPENAI_INVENTORY_MODEL:-gpt-5.6-terra}
       TZ: Europe/Amsterdam
     volumes:
       - storage:/var/www/html/storage

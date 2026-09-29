@@ -29,4 +29,9 @@ class StorageBox extends Model
     {
         return $this->hasMany(StorageBoxPhoto::class)->latest();
     }
+
+    public function analyses(): HasMany
+    {
+        return $this->hasMany(StorageBoxAnalysis::class)->latest();
+    }
 }

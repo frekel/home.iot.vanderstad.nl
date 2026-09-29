@@ -3,10 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\StorageBox;
+use App\Models\StorageBoxAnalysis;
 use App\Models\StorageBoxItem;
+use App\Services\InventoryVisionAnalyzer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Throwable;
 
 class AtticBoxInventoryController extends Controller
 {
@@ -54,16 +59,21 @@ class AtticBoxInventoryController extends Controller
         return redirect()->route('inventory.attic-boxes.show', $box->number);
     }
 
-    public function show(int $number): View
+    public function show(int $number, InventoryVisionAnalyzer $analyzer): View
     {
-        $box = StorageBox::query()
-            ->where('location', self::LOCATION)
-            ->where('number', $number)
-            ->firstOrFail();
-
+        $box = $this->box($number);
         $box->load(['items', 'photos']);
 
-        return view('inventory.attic-boxes.show', ['box' => $box]);
+        $latestBatchId = $box->photos->first(fn ($photo) => filled($photo->batch_id))?->batch_id;
+        $latestPhotoCount = $latestBatchId
+            ? $box->photos->where('batch_id', $latestBatchId)->count()
+            : 0;
+
+        return view('inventory.attic-boxes.show', [
+            'box' => $box,
+            'aiConfigured' => $analyzer->configured(),
+            'latestPhotoCount' => $latestPhotoCount,
+        ]);
     }
 
     public function storeItem(Request $request, int $number): RedirectResponse
@@ -113,13 +123,16 @@ class AtticBoxInventoryController extends Controller
     {
         $box = $this->box($number);
         $data = $request->validate([
-            'photos' => ['required', 'array', 'min:1', 'max:8'],
-            'photos.*' => ['required', 'image', 'max:12288'],
+            'photos' => ['required', 'array', 'min:1', 'max:4'],
+            'photos.*' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:8192'],
         ]);
+
+        $batchId = (string) Str::uuid();
 
         foreach ($data['photos'] as $photo) {
             $path = $photo->store('inventory/zolder/kisten/'.$box->number, 'local');
             $box->photos()->create([
+                'batch_id' => $batchId,
                 'path' => $path,
                 'original_name' => $photo->getClientOriginalName(),
             ]);
@@ -127,7 +140,107 @@ class AtticBoxInventoryController extends Controller
 
         $box->touch();
 
-        return back()->with('status', 'Foto'.(count($data['photos']) === 1 ? '' : "'s").' opgeslagen.');
+        return back()->with('status', 'Fotoset opgeslagen. Je kunt hem nu met AI analyseren.');
+    }
+
+    public function analyze(int $number, InventoryVisionAnalyzer $analyzer): RedirectResponse
+    {
+        $box = $this->box($number);
+        $box->load('items');
+
+        if (! $analyzer->configured()) {
+            return back()->withErrors(['ai' => 'OPENAI_API_KEY is niet ingesteld op de server.']);
+        }
+
+        $latestPhoto = $box->photos()->whereNotNull('batch_id')->latest('id')->first();
+        if (! $latestPhoto) {
+            return back()->withErrors(['photos' => 'Upload eerst een nieuwe fotoset.']);
+        }
+
+        $photos = $box->photos()
+            ->where('batch_id', $latestPhoto->batch_id)
+            ->oldest('id')
+            ->get();
+
+        try {
+            $result = $analyzer->analyze($box, $photos);
+        } catch (Throwable $e) {
+            report($e);
+
+            return back()->withErrors(['ai' => 'De AI-analyse is mislukt. Er is niets aan de inventaris gewijzigd.']);
+        }
+
+        $analysis = $box->analyses()->create([
+            'photo_batch_id' => $latestPhoto->batch_id,
+            'model' => $result['model'],
+            'response_id' => $result['response_id'],
+            'result' => $result['result'],
+        ]);
+
+        return redirect()->route('inventory.attic-boxes.analysis.review', [$box->number, $analysis]);
+    }
+
+    public function reviewAnalysis(int $number, StorageBoxAnalysis $analysis): View
+    {
+        $box = $this->box($number);
+        abort_unless($analysis->storage_box_id === $box->id, 404);
+
+        return view('inventory.attic-boxes.analysis', [
+            'box' => $box,
+            'analysis' => $analysis,
+        ]);
+    }
+
+    public function applyAnalysis(Request $request, int $number, StorageBoxAnalysis $analysis): RedirectResponse
+    {
+        $box = $this->box($number);
+        abort_unless($analysis->storage_box_id === $box->id, 404);
+        abort_if($analysis->applied_at, 409);
+
+        $data = $request->validate([
+            'mode' => ['required', 'in:merge,replace'],
+            'items' => ['nullable', 'array', 'max:100'],
+            'items.*.include' => ['required', 'boolean'],
+            'items.*.name' => ['required', 'string', 'max:255'],
+            'items.*.quantity' => ['required', 'integer', 'min:1', 'max:9999'],
+            'items.*.notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $items = collect($data['items'] ?? [])
+            ->filter(fn (array $item) => (bool) $item['include'])
+            ->map(fn (array $item) => [
+                'name' => trim($item['name']),
+                'quantity' => (int) $item['quantity'],
+                'notes' => filled($item['notes'] ?? null) ? trim($item['notes']) : null,
+            ]);
+
+        DB::transaction(function () use ($box, $analysis, $data, $items) {
+            if ($data['mode'] === 'replace') {
+                $box->items()->delete();
+            }
+
+            foreach ($items as $item) {
+                if ($data['mode'] === 'merge') {
+                    $existing = $box->items()
+                        ->whereRaw('LOWER(name) = ?', [mb_strtolower($item['name'])])
+                        ->first();
+
+                    if ($existing) {
+                        $existing->update($item);
+                        continue;
+                    }
+                }
+
+                $box->items()->create($item);
+            }
+
+            $analysis->update(['applied_at' => now()]);
+            $box->touch();
+        });
+
+        return redirect()
+            ->route('inventory.attic-boxes.show', $box->number)
+            ->with('status', 'AI-voorstel opgeslagen in de inventaris.');
     }
 
     private function box(int $number): StorageBox

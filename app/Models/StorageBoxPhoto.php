@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class StorageBoxPhoto extends Model
 {
     protected $fillable = [
+        'batch_id',
         'path',
         'original_name',
     ];

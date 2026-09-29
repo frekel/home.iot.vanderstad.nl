@@ -19,18 +19,28 @@
 @endif
 
 <section class="card">
-    <h2>Foto's van de inhoud</h2>
-    <p>Maak één of meer foto's van bovenaf. De foto's worden privé opgeslagen en vormen straks de invoer voor de AI-inventarisatie.</p>
+    <h2>Inventariseren met foto's</h2>
+    <p>Maak maximaal vier foto's van de inhoud, liefst vanuit verschillende hoeken. Eén upload vormt één fotoset voor de volgende AI-analyse.</p>
     <form method="post" enctype="multipart/form-data" action="{{ route('inventory.attic-boxes.photos.store', $box->number) }}" class="stack">
         @csrf
         <label class="photo-input">
             <span>Foto's kiezen of maken</span>
-            <input type="file" name="photos[]" accept="image/*" capture="environment" multiple required>
+            <input type="file" name="photos[]" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" multiple required>
         </label>
         <button class="button full" type="submit">Foto's opslaan</button>
     </form>
-    @if ($box->photos->isNotEmpty())
-        <p class="photo-count">{{ $box->photos->count() }} {{ $box->photos->count() === 1 ? 'foto' : "foto's" }} opgeslagen voor deze kist.</p>
+
+    @if ($latestPhotoCount > 0)
+        <p class="photo-count">De nieuwste fotoset bevat {{ $latestPhotoCount }} {{ $latestPhotoCount === 1 ? 'foto' : "foto's" }}.</p>
+        <form method="post" action="{{ route('inventory.attic-boxes.analysis.run', $box->number) }}">
+            @csrf
+            <button class="button full" type="submit" @disabled(! $aiConfigured)>Analyseer nieuwste fotoset met AI</button>
+        </form>
+        @unless ($aiConfigured)
+            <p class="photo-count">AI-analyse is nog niet beschikbaar: OPENAI_API_KEY is niet ingesteld op de server.</p>
+        @endunless
+    @elseif ($box->photos->isNotEmpty())
+        <p class="photo-count">Er zijn oudere foto's zonder fotoset opgeslagen. Upload een nieuwe fotoset om AI-analyse te starten.</p>
     @endif
 </section>
 
