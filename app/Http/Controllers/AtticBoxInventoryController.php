@@ -8,6 +8,7 @@ use App\Models\StorageBoxItem;
 use App\Services\InventoryVisionAnalyzer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -149,7 +150,7 @@ class AtticBoxInventoryController extends Controller
         $box->load('items');
 
         if (! $analyzer->configured()) {
-            return back()->withErrors(['ai' => 'OPENAI_API_KEY is niet ingesteld op de server.']);
+            return back()->withErrors(['ai' => 'De gekozen AI-provider is niet volledig geconfigureerd.']);
         }
 
         $latestPhoto = $box->photos()->whereNotNull('batch_id')->latest('id')->first();
@@ -162,20 +163,28 @@ class AtticBoxInventoryController extends Controller
             ->oldest('id')
             ->get();
 
+        $lock = Cache::lock('inventory-ai-analysis:'.$box->id, 180);
+
+        if (! $lock->get()) {
+            return back()->withErrors(['ai' => 'Er loopt al een AI-analyse voor deze kist. Wacht tot die klaar is.']);
+        }
+
         try {
             $result = $analyzer->analyze($box, $photos);
+
+            $analysis = $box->analyses()->create([
+                'photo_batch_id' => $latestPhoto->batch_id,
+                'model' => $result['model'],
+                'response_id' => $result['response_id'],
+                'result' => $result['result'],
+            ]);
         } catch (Throwable $e) {
             report($e);
 
             return back()->withErrors(['ai' => 'De AI-analyse is mislukt. Er is niets aan de inventaris gewijzigd.']);
+        } finally {
+            $lock->release();
         }
-
-        $analysis = $box->analyses()->create([
-            'photo_batch_id' => $latestPhoto->batch_id,
-            'model' => $result['model'],
-            'response_id' => $result['response_id'],
-            'result' => $result['result'],
-        ]);
 
         return redirect()->route('inventory.attic-boxes.analysis.review', [$box->number, $analysis]);
     }
