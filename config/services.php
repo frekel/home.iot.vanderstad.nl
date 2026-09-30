@@ -36,7 +36,7 @@ return [
     ],
 
     'inventory_ai' => [
-        'provider' => env('INVENTORY_AI_PROVIDER', 'cloudflare'),
+        'provider' => env('INVENTORY_AI_PROVIDER'),
     ],
 
     'cloudflare' => [
