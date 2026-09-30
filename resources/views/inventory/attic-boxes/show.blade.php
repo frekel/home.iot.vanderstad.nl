@@ -32,12 +32,12 @@
 
     @if ($latestPhotoCount > 0)
         <p class="photo-count">De nieuwste fotoset bevat {{ $latestPhotoCount }} {{ $latestPhotoCount === 1 ? 'foto' : "foto's" }}.</p>
-        <form method="post" action="{{ route('inventory.attic-boxes.analysis.run', $box->number) }}">
+        <form method="post" action="{{ route('inventory.attic-boxes.analysis.run', $box->number) }}" data-ai-analysis-form>
             @csrf
-            <button class="button full" type="submit" @disabled(! $aiConfigured)>Analyseer nieuwste fotoset met AI</button>
+            <button class="button full" type="submit" data-ai-analysis-button @disabled(! $aiConfigured)>Analyseer nieuwste fotoset met AI</button>
         </form>
         @unless ($aiConfigured)
-            <p class="photo-count">AI-analyse is nog niet beschikbaar: OPENAI_API_KEY is niet ingesteld op de server.</p>
+            <p class="photo-count">AI-analyse is nog niet beschikbaar: de gekozen AI-provider is niet volledig geconfigureerd.</p>
         @endunless
     @elseif ($box->photos->isNotEmpty())
         <p class="photo-count">Er zijn oudere foto's zonder fotoset opgeslagen. Upload een nieuwe fotoset om AI-analyse te starten.</p>
@@ -91,4 +91,26 @@
         @endforelse
     </div>
 </section>
+
+<script>
+document.querySelectorAll('[data-ai-analysis-form]').forEach((form) => {
+    let submitted = false;
+
+    form.addEventListener('submit', (event) => {
+        if (submitted) {
+            event.preventDefault();
+            return;
+        }
+
+        submitted = true;
+
+        const button = form.querySelector('[data-ai-analysis-button]');
+        if (button) {
+            button.disabled = true;
+            button.setAttribute('aria-busy', 'true');
+            button.textContent = 'Analyseren...';
+        }
+    });
+});
+</script>
 @endsection
