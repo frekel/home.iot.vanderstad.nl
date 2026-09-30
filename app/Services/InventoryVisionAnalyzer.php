@@ -47,7 +47,7 @@ class InventoryVisionAnalyzer
     {
         $visionModel = (string) config('services.cloudflare.inventory_vision_model', '@cf/meta/llama-3.2-11b-vision-instruct');
         $consolidationModel = (string) config('services.cloudflare.inventory_consolidation_model', '@cf/meta/llama-3.3-70b-instruct-fp8-fast');
-        $photoResults = [];
+        $photoObservations = [];
 
         foreach ($photos as $index => $photo) {
             $mime = $this->supportedMime($photo->path);
@@ -57,35 +57,31 @@ class InventoryVisionAnalyzer
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => 'Je analyseert foto’s van de inhoud van een opslagkist. Noem uitsluitend voorwerpen die daadwerkelijk zichtbaar zijn. Verzin niets. Geef korte Nederlandse namen. Geef uitsluitend geldige JSON terug, zonder markdown of uitleg.',
+                        'content' => 'Je analyseert foto’s van de inhoud van een opslagkist. Noem uitsluitend voorwerpen die daadwerkelijk zichtbaar zijn. Verzin niets. Gebruik korte Nederlandse namen. Beschrijf aantallen voorzichtig en vermeld onzekerheid expliciet.',
                     ],
                     [
                         'role' => 'user',
-                        'content' => 'Analyseer foto '.($index + 1).' van kist '.$box->number.'. Retourneer exact dit JSON-formaat: {"items":[{"name":"...","quantity":1,"notes":"","confidence":"high|medium|low"}],"warnings":["..."]}. Tel alleen wat op deze foto zichtbaar is. Als een aantal onzeker is, gebruik een voorzichtige schatting en lagere confidence.',
+                        'content' => 'Analyseer foto '.($index + 1).' van kist '.$box->number.'. Geef een compacte lijst van zichtbare voorwerpen met geschat aantal en eventuele onzekerheid. Tel alleen wat op deze foto zichtbaar is. Je hoeft geen JSON te maken.',
                     ],
                 ],
                 'image' => $image,
                 'temperature' => 0,
-                'max_tokens' => 1400,
+                'max_tokens' => 1200,
             ]);
 
-            $photoResults[] = $this->parseCloudflareResult($response, 'vision');
+            $photoObservations[] = $this->cloudflareTextResult($response, 'vision');
         }
 
-        if (count($photoResults) === 1) {
-            $result = $this->normalizeResult($photoResults[0]);
-        } else {
-            $result = $this->consolidateCloudflareResults($box, $photoResults, $consolidationModel);
-        }
+        $result = $this->consolidateCloudflareResults($box, $photoObservations, $consolidationModel);
 
         return [
-            'model' => 'cloudflare:'.$visionModel,
+            'model' => 'cloudflare:'.$visionModel.' + '.$consolidationModel,
             'response_id' => null,
             'result' => $result,
         ];
     }
 
-    private function consolidateCloudflareResults(StorageBox $box, array $photoResults, string $model): array
+    private function consolidateCloudflareResults(StorageBox $box, array $photoObservations, string $model): array
     {
         $existing = $box->items
             ->map(fn ($item) => [
@@ -100,11 +96,11 @@ class InventoryVisionAnalyzer
             'messages' => [
                 [
                     'role' => 'system',
-                    'content' => 'Je consolideert meerdere AI-observaties van dezelfde opslagkist. Hetzelfde fysieke voorwerp kan op meerdere foto’s staan: tel dat niet dubbel. Verzin geen voorwerpen. Gebruik korte Nederlandse namen.',
+                    'content' => 'Je maakt een gestructureerde inventaris uit één of meer foto-observaties van dezelfde opslagkist. Hetzelfde fysieke voorwerp kan op meerdere foto’s staan: tel dat niet dubbel. Verzin geen voorwerpen. Gebruik korte Nederlandse namen. Gebruik confidence high, medium of low en zet onzekerheden kort in notes of warnings.',
                 ],
                 [
                     'role' => 'user',
-                    'content' => 'Kist '.$box->number.'. Bestaande inventaris is alleen naamcontext en geen bewijs dat iets zichtbaar is: '.json_encode($existing, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).'. Foto-observaties: '.json_encode($photoResults, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).'. Maak één geconsolideerde lijst.',
+                    'content' => 'Kist '.$box->number.'. Bestaande inventaris is alleen naamcontext en geen bewijs dat iets zichtbaar is: '.json_encode($existing, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).'. Foto-observaties: '.json_encode($photoObservations, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).'. Maak één geconsolideerde inventaris van uitsluitend de huidige foto-observaties.',
                 ],
             ],
             'temperature' => 0,
@@ -146,6 +142,21 @@ class InventoryVisionAnalyzer
         return $response;
     }
 
+    private function cloudflareTextResult(Response $response, string $stage): string
+    {
+        $value = $response->json('result.response');
+
+        if (is_string($value) && trim($value) !== '') {
+            return trim($value);
+        }
+
+        if (is_array($value)) {
+            return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        }
+
+        throw new RuntimeException('Cloudflare gaf geen bruikbaar resultaat terug tijdens '.$stage.'.');
+    }
+
     private function parseCloudflareResult(Response $response, string $stage): array
     {
         $value = $response->json('result.response');
@@ -164,7 +175,18 @@ class InventoryVisionAnalyzer
         try {
             $decoded = json_decode($text, true, flags: JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
-            throw new RuntimeException('Cloudflare gaf ongeldige JSON terug tijdens '.$stage.'.', previous: $e);
+            $start = strpos($text, '{');
+            $end = strrpos($text, '}');
+
+            if ($start === false || $end === false || $end <= $start) {
+                throw new RuntimeException('Cloudflare gaf ongeldige JSON terug tijdens '.$stage.'.', previous: $e);
+            }
+
+            try {
+                $decoded = json_decode(substr($text, $start, $end - $start + 1), true, flags: JSON_THROW_ON_ERROR);
+            } catch (\JsonException $nested) {
+                throw new RuntimeException('Cloudflare gaf ongeldige JSON terug tijdens '.$stage.'.', previous: $nested);
+            }
         }
 
         if (! is_array($decoded)) {
