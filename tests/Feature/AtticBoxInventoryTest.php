@@ -185,6 +185,25 @@ class AtticBoxInventoryTest extends TestCase
         $this->get('/inventory/zolder/kisten/8/photos/'.$photo->id)->assertNotFound();
     }
 
+    public function test_uploaded_photo_can_be_deleted_with_its_file(): void
+    {
+        Storage::fake('local');
+        $box = StorageBox::create(['location' => 'zolder', 'number' => 7]);
+
+        $this->post('/inventory/zolder/kisten/7/photos', [
+            'photos' => [UploadedFile::fake()->image('inhoud.jpg')],
+        ])->assertRedirect();
+
+        $photo = $box->photos()->firstOrFail();
+        Storage::disk('local')->assertExists($photo->path);
+
+        $this->delete('/inventory/zolder/kisten/7/photos/'.$photo->id)
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('storage_box_photos', ['id' => $photo->id]);
+        Storage::disk('local')->assertMissing($photo->path);
+    }
+
     public function test_ai_analysis_is_reviewed_before_it_changes_inventory(): void
     {
         Storage::fake('local');
