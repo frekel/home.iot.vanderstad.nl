@@ -41,10 +41,11 @@
         .box-name { margin:4px 0 0; color:#f5f7fa; font-size:18px; font-weight:700; }
         .box-list-name { margin-top:4px; color:#cbd3dc; font-weight:700; }
         .item { display:grid; gap:10px; }
-        .item-title { display:flex; justify-content:space-between; gap:16px; align-items:baseline; }
-        .item-title strong { font-size:18px; }
-        .qty { color:#aeb8c4; white-space:nowrap; }
-        details summary { cursor:pointer; color:#aeb8c4; }
+        .item-header { display:flex; justify-content:space-between; gap:12px; align-items:center; }
+        .item-header strong { font-size:18px; min-width:0; }
+        .item-actions { display:flex; gap:8px; flex-shrink:0; }
+        .button.compact { padding:8px 10px; border-radius:10px; font-size:13px; }
+        .item-panel { padding-top:12px; border-top:1px solid #26303c; }
         .inline-actions { display:flex; gap:8px; margin-top:10px; }
         .inline-actions > * { flex:1; }
         .photo-input { padding:12px; background:#0f141b; border:1px dashed #46566a; border-radius:12px; }
