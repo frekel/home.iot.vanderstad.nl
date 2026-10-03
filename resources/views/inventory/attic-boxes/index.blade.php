@@ -47,10 +47,9 @@
     @forelse ($boxes as $box)
         <a class="box-link" href="{{ route('inventory.attic-boxes.show', $box->number) }}">
             <div>
-                <div class="box-number">Kist {{ $box->number }}</div>
-                @if ($box->name)
-                    <div class="box-list-name">{{ $box->name }}</div>
-                @endif
+                <div class="box-number">
+                    Kist {{ $box->number }}@if ($box->name): {{ $box->name }}@endif
+                </div>
                 <div class="muted">{{ $box->items_count }} {{ $box->items_count === 1 ? 'item' : 'items' }}</div>
             </div>
             <span aria-hidden="true">›</span>
