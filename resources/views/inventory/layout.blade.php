@@ -38,6 +38,8 @@
         .box-list { display:grid; gap:10px; }
         .box-link { display:flex; justify-content:space-between; align-items:center; text-decoration:none; padding:16px; border-radius:14px; background:#151b23; border:1px solid #26303c; }
         .box-number { font-size:28px; font-weight:800; letter-spacing:-.03em; }
+        .box-name { margin:4px 0 0; color:#f5f7fa; font-size:18px; font-weight:700; }
+        .box-list-name { margin-top:4px; color:#cbd3dc; font-weight:700; }
         .item { display:grid; gap:10px; }
         .item-title { display:flex; justify-content:space-between; gap:16px; align-items:baseline; }
         .item-title strong { font-size:18px; }
@@ -48,6 +50,11 @@
         .photo-input { padding:12px; background:#0f141b; border:1px dashed #46566a; border-radius:12px; }
         .photo-input input { border:0; padding:0; background:transparent; }
         .photo-count { font-size:13px; color:#8d99a7; }
+        .subheading { margin:18px 0 10px; font-size:16px; }
+        .photo-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+        .photo-card { overflow:hidden; border:1px solid #26303c; border-radius:12px; background:#0f141b; text-decoration:none; }
+        .photo-card img { display:block; width:100%; aspect-ratio:4/3; object-fit:cover; }
+        .photo-card span { display:block; padding:8px 10px; color:#8d99a7; font-size:12px; }
         .empty { text-align:center; padding:24px 14px; color:#8d99a7; }
         .number-entry { font-size:30px; text-align:center; font-weight:800; letter-spacing:.06em; }
         .choice { display:flex; grid-template-columns:none; flex-direction:row; align-items:flex-start; gap:10px; padding:12px; background:#0f141b; border:1px solid #344152; border-radius:12px; }
