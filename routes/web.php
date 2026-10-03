@@ -22,6 +22,7 @@ Route::prefix('inventory/zolder/kisten')->name('inventory.attic-boxes.')->group(
     Route::delete('/{number}/items/{item}', [AtticBoxInventoryController::class, 'destroyItem'])->whereNumber('number')->whereNumber('item')->name('items.destroy');
     Route::post('/{number}/photos', [AtticBoxInventoryController::class, 'storePhotos'])->whereNumber('number')->name('photos.store');
     Route::get('/{number}/photos/{photo}', [AtticBoxInventoryController::class, 'showPhoto'])->whereNumber('number')->whereNumber('photo')->name('photos.show');
+    Route::delete('/{number}/photos/{photo}', [AtticBoxInventoryController::class, 'destroyPhoto'])->whereNumber('number')->whereNumber('photo')->name('photos.destroy');
     Route::post('/{number}/analyse', [AtticBoxInventoryController::class, 'analyze'])->whereNumber('number')->name('analysis.run');
     Route::get('/{number}/analyse/{analysis}', [AtticBoxInventoryController::class, 'reviewAnalysis'])->whereNumber('number')->whereNumber('analysis')->name('analysis.review');
     Route::post('/{number}/analyse/{analysis}', [AtticBoxInventoryController::class, 'applyAnalysis'])->whereNumber('number')->whereNumber('analysis')->name('analysis.apply');
