@@ -10,6 +10,7 @@ class StorageBox extends Model
     protected $fillable = [
         'location',
         'number',
+        'name',
         'description',
     ];
 
