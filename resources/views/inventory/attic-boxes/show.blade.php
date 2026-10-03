@@ -1,6 +1,6 @@
 @extends('inventory.layout')
 
-@section('title', 'Kist '.$box->number)
+@section('title', $box->name ? 'Kist '.$box->number.' · '.$box->name : 'Kist '.$box->number)
 
 @section('content')
 <div class="topbar">
@@ -8,6 +8,9 @@
 </div>
 
 <h1>Kist {{ $box->number }}</h1>
+@if ($box->name)
+    <p class="box-name">{{ $box->name }}</p>
+@endif
 <p>{{ $box->items->count() }} {{ $box->items->count() === 1 ? 'item' : 'items' }} in de inventaris.</p>
 
 @if (session('status'))
@@ -17,6 +20,16 @@
 @if ($errors->any())
     <div class="error">{{ $errors->first() }}</div>
 @endif
+
+<section class="card">
+    <h2>Naam van de kist</h2>
+    <form method="post" action="{{ route('inventory.attic-boxes.update', $box->number) }}" class="row">
+        @csrf
+        @method('patch')
+        <input type="text" name="name" maxlength="100" value="{{ old('name', $box->name) }}" placeholder="Bijv. Kerstspullen">
+        <button class="button secondary" type="submit">Opslaan</button>
+    </form>
+</section>
 
 <section class="card">
     <h2>Inventariseren met foto's</h2>
@@ -41,6 +54,18 @@
         @endunless
     @elseif ($box->photos->isNotEmpty())
         <p class="photo-count">Er zijn oudere foto's zonder fotoset opgeslagen. Upload een nieuwe fotoset om AI-analyse te starten.</p>
+    @endif
+
+    @if ($box->photos->isNotEmpty())
+        <h3 class="subheading">Opgeslagen foto's</h3>
+        <div class="photo-grid">
+            @foreach ($box->photos as $photo)
+                <a class="photo-card" href="{{ route('inventory.attic-boxes.photos.show', [$box->number, $photo]) }}" target="_blank" rel="noopener">
+                    <img src="{{ route('inventory.attic-boxes.photos.show', [$box->number, $photo]) }}" alt="Foto van kist {{ $box->number }}" loading="lazy">
+                    <span>{{ $photo->created_at->format('d-m-Y H:i') }}</span>
+                </a>
+            @endforeach
+        </div>
     @endif
 </section>
 
@@ -67,6 +92,7 @@
                 @if ($item->notes)
                     <div class="muted">{{ $item->notes }}</div>
                 @endif
+
                 <details>
                     <summary>Bewerken</summary>
                     <form method="post" action="{{ route('inventory.attic-boxes.items.update', [$box->number, $item]) }}" class="stack" style="margin-top:12px">
@@ -83,6 +109,22 @@
                         @csrf
                         @method('delete')
                         <button class="button danger full" type="submit">Verwijderen</button>
+                    </form>
+                </details>
+
+                <details>
+                    <summary>Verplaatsen naar andere kist</summary>
+                    <form method="post" action="{{ route('inventory.attic-boxes.items.move', [$box->number, $item]) }}" class="stack" style="margin-top:12px">
+                        @csrf
+                        <label>
+                            Naar kist
+                            <input type="number" name="target_number" min="1" max="9999" inputmode="numeric" required placeholder="Bijv. 24">
+                        </label>
+                        <label>
+                            Aantal
+                            <input type="number" name="quantity" value="{{ $item->quantity }}" min="1" max="{{ $item->quantity }}" inputmode="numeric" required>
+                        </label>
+                        <button class="button secondary full" type="submit">Verplaatsen</button>
                     </form>
                 </details>
             </article>
