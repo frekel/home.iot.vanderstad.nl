@@ -94,6 +94,97 @@ class AtticBoxInventoryTest extends TestCase
         Storage::disk('local')->assertExists($photos[0]->path);
     }
 
+
+    public function test_box_can_be_named_and_found_by_name(): void
+    {
+        StorageBox::create(['location' => 'zolder', 'number' => 44]);
+
+        $this->patch('/inventory/zolder/kisten/44', [
+            'name' => 'Kerstspullen',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('storage_boxes', [
+            'location' => 'zolder',
+            'number' => 44,
+            'name' => 'Kerstspullen',
+        ]);
+
+        $this->get('/inventory/zolder/kisten?q=Kerst')
+            ->assertOk()
+            ->assertSee('Kist 44')
+            ->assertSee('Kerstspullen');
+    }
+
+    public function test_part_of_an_item_can_be_moved_to_another_box(): void
+    {
+        $source = StorageBox::create(['location' => 'zolder', 'number' => 10]);
+        $target = StorageBox::create(['location' => 'zolder', 'number' => 11]);
+        $item = $source->items()->create([
+            'name' => 'HDMI-kabel',
+            'quantity' => 5,
+            'notes' => 'Zwart',
+        ]);
+
+        $this->post('/inventory/zolder/kisten/10/items/'.$item->id.'/move', [
+            'target_number' => 11,
+            'quantity' => 2,
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('storage_box_items', [
+            'storage_box_id' => $source->id,
+            'name' => 'HDMI-kabel',
+            'quantity' => 3,
+        ]);
+        $this->assertDatabaseHas('storage_box_items', [
+            'storage_box_id' => $target->id,
+            'name' => 'HDMI-kabel',
+            'quantity' => 2,
+            'notes' => 'Zwart',
+        ]);
+    }
+
+    public function test_moving_all_of_an_item_creates_the_destination_box_and_removes_source_item(): void
+    {
+        $source = StorageBox::create(['location' => 'zolder', 'number' => 20]);
+        $item = $source->items()->create([
+            'name' => 'Verlengsnoer',
+            'quantity' => 2,
+        ]);
+
+        $this->post('/inventory/zolder/kisten/20/items/'.$item->id.'/move', [
+            'target_number' => 21,
+            'quantity' => 2,
+        ])->assertRedirect();
+
+        $target = StorageBox::query()
+            ->where('location', 'zolder')
+            ->where('number', 21)
+            ->firstOrFail();
+
+        $this->assertDatabaseMissing('storage_box_items', ['id' => $item->id]);
+        $this->assertDatabaseHas('storage_box_items', [
+            'storage_box_id' => $target->id,
+            'name' => 'Verlengsnoer',
+            'quantity' => 2,
+        ]);
+    }
+
+    public function test_uploaded_photo_can_be_viewed_only_through_its_own_box(): void
+    {
+        Storage::fake('local');
+        $box = StorageBox::create(['location' => 'zolder', 'number' => 7]);
+        StorageBox::create(['location' => 'zolder', 'number' => 8]);
+
+        $this->post('/inventory/zolder/kisten/7/photos', [
+            'photos' => [UploadedFile::fake()->image('inhoud.jpg')],
+        ])->assertRedirect();
+
+        $photo = $box->photos()->firstOrFail();
+
+        $this->get('/inventory/zolder/kisten/7/photos/'.$photo->id)->assertOk();
+        $this->get('/inventory/zolder/kisten/8/photos/'.$photo->id)->assertNotFound();
+    }
+
     public function test_ai_analysis_is_reviewed_before_it_changes_inventory(): void
     {
         Storage::fake('local');
