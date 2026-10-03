@@ -92,36 +92,36 @@
     <div class="stack">
         @forelse ($box->items as $item)
             <article class="card item">
-                <div class="item-title">
-                    <strong>{{ $item->name }}</strong>
-                    <span class="qty">× {{ $item->quantity }}</span>
+                <div class="item-header">
+                    <strong>{{ $item->name }} ({{ $item->quantity }})</strong>
+                    <div class="item-actions">
+                        <button class="button secondary compact" type="button" data-item-toggle="edit-{{ $item->id }}">Bewerken</button>
+                        <button class="button secondary compact" type="button" data-item-toggle="move-{{ $item->id }}">Verplaatsen</button>
+                    </div>
                 </div>
+
                 @if ($item->notes)
                     <div class="muted">{{ $item->notes }}</div>
                 @endif
 
-                <details>
-                    <summary>Bewerken</summary>
-                    <form method="post" action="{{ route('inventory.attic-boxes.items.update', [$box->number, $item]) }}" class="stack" style="margin-top:12px">
+                <div id="edit-{{ $item->id }}" class="item-panel" hidden>
+                    <form method="post" action="{{ route('inventory.attic-boxes.items.update', [$box->number, $item]) }}" class="stack">
                         @csrf
                         @method('put')
                         <label>Naam<input type="text" name="name" value="{{ $item->name }}" maxlength="255" required></label>
                         <label>Aantal<input type="number" name="quantity" value="{{ $item->quantity }}" min="1" max="9999" inputmode="numeric" required></label>
                         <label>Opmerking<textarea name="notes" maxlength="2000">{{ $item->notes }}</textarea></label>
-                        <div class="inline-actions">
-                            <button class="button secondary" type="submit">Opslaan</button>
-                        </div>
+                        <button class="button secondary full" type="submit">Opslaan</button>
                     </form>
                     <form method="post" action="{{ route('inventory.attic-boxes.items.destroy', [$box->number, $item]) }}" style="margin-top:8px" onsubmit="return confirm('Dit item verwijderen?')">
                         @csrf
                         @method('delete')
                         <button class="button danger full" type="submit">Verwijderen</button>
                     </form>
-                </details>
+                </div>
 
-                <details>
-                    <summary>Verplaatsen naar andere kist</summary>
-                    <form method="post" action="{{ route('inventory.attic-boxes.items.move', [$box->number, $item]) }}" class="stack" style="margin-top:12px">
+                <div id="move-{{ $item->id }}" class="item-panel" hidden>
+                    <form method="post" action="{{ route('inventory.attic-boxes.items.move', [$box->number, $item]) }}" class="stack">
                         @csrf
                         <label>
                             Naar kist
@@ -133,7 +133,7 @@
                         </label>
                         <button class="button secondary full" type="submit">Verplaatsen</button>
                     </form>
-                </details>
+                </div>
             </article>
         @empty
             <div class="empty card">Deze kist heeft nog geen items.</div>
@@ -142,6 +142,21 @@
 </section>
 
 <script>
+document.querySelectorAll('[data-item-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+        const item = button.closest('.item');
+        const target = document.getElementById(button.dataset.itemToggle);
+
+        item.querySelectorAll('.item-panel').forEach((panel) => {
+            if (panel !== target) {
+                panel.hidden = true;
+            }
+        });
+
+        target.hidden = ! target.hidden;
+    });
+});
+
 document.querySelectorAll('[data-ai-analysis-form]').forEach((form) => {
     let submitted = false;
 
