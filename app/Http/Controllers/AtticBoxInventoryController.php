@@ -240,6 +240,18 @@ class AtticBoxInventoryController extends Controller
         );
     }
 
+    public function destroyPhoto(int $number, StorageBoxPhoto $photo): RedirectResponse
+    {
+        $box = $this->box($number);
+        abort_unless($photo->storage_box_id === $box->id, 404);
+
+        Storage::disk('local')->delete($photo->path);
+        $photo->delete();
+        $box->touch();
+
+        return back()->with('status', 'Foto verwijderd.');
+    }
+
     public function analyze(int $number, InventoryVisionAnalyzer $analyzer): RedirectResponse
     {
         $box = $this->box($number);
