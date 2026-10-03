@@ -38,7 +38,7 @@
         @csrf
         <label class="photo-input">
             <span>Foto's kiezen of maken</span>
-            <input type="file" name="photos[]" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" multiple required>
+            <input type="file" name="photos[]" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" multiple required data-photo-input>
         </label>
         <button class="button full" type="submit">Foto's opslaan</button>
     </form>
@@ -47,7 +47,7 @@
         <p class="photo-count">De nieuwste fotoset bevat {{ $latestPhotoCount }} {{ $latestPhotoCount === 1 ? 'foto' : "foto's" }}.</p>
         <form method="post" action="{{ route('inventory.attic-boxes.analysis.run', $box->number) }}" data-ai-analysis-form>
             @csrf
-            <button class="button full" type="submit" data-ai-analysis-button @disabled(! $aiConfigured)>Analyseer nieuwste fotoset met AI</button>
+            <button class="button full" type="submit" data-ai-analysis-button data-ai-configured="{{ $aiConfigured ? '1' : '0' }}" @disabled(! $aiConfigured)>Analyseer nieuwste fotoset met AI</button>
         </form>
         @unless ($aiConfigured)
             <p class="photo-count">AI-analyse is nog niet beschikbaar: de gekozen AI-provider is niet volledig geconfigureerd.</p>
@@ -156,6 +156,24 @@ document.querySelectorAll('[data-item-toggle]').forEach((button) => {
         target.hidden = ! target.hidden;
     });
 });
+
+const photoInput = document.querySelector('[data-photo-input]');
+const aiButton = document.querySelector('[data-ai-analysis-button]');
+
+if (photoInput && aiButton) {
+    const syncAiButton = () => {
+        const hasUnsavedPhotos = photoInput.files && photoInput.files.length > 0;
+        const aiConfigured = aiButton.dataset.aiConfigured === '1';
+
+        aiButton.disabled = hasUnsavedPhotos || ! aiConfigured;
+        aiButton.textContent = hasUnsavedPhotos
+            ? "Sla eerst de nieuwe foto's op"
+            : 'Analyseer nieuwste fotoset met AI';
+    };
+
+    photoInput.addEventListener('change', syncAiButton);
+    syncAiButton();
+}
 
 document.querySelectorAll('[data-ai-analysis-form]').forEach((form) => {
     let submitted = false;
