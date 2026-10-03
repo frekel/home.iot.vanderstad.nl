@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\StorageBox;
 use App\Models\StorageBoxAnalysis;
 use App\Models\StorageBoxItem;
+use App\Models\StorageBoxPhoto;
 use App\Services\InventoryVisionAnalyzer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Throwable;
@@ -31,10 +33,11 @@ class AtticBoxInventoryController extends Controller
                         $builder->where('number', (int) $query);
                     }
 
-                    $builder->orWhereHas('items', function ($items) use ($query) {
-                        $items->where('name', 'like', '%'.$query.'%')
-                            ->orWhere('notes', 'like', '%'.$query.'%');
-                    });
+                    $builder->orWhere('name', 'like', '%'.$query.'%')
+                        ->orWhereHas('items', function ($items) use ($query) {
+                            $items->where('name', 'like', '%'.$query.'%')
+                                ->orWhere('notes', 'like', '%'.$query.'%');
+                        });
                 });
             })
             ->orderBy('number')
@@ -77,6 +80,20 @@ class AtticBoxInventoryController extends Controller
         ]);
     }
 
+    public function updateBox(Request $request, int $number): RedirectResponse
+    {
+        $box = $this->box($number);
+        $data = $request->validate([
+            'name' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $box->update([
+            'name' => filled($data['name'] ?? null) ? trim($data['name']) : null,
+        ]);
+
+        return back()->with('status', 'Naam van de kist opgeslagen.');
+    }
+
     public function storeItem(Request $request, int $number): RedirectResponse
     {
         $box = $this->box($number);
@@ -107,6 +124,70 @@ class AtticBoxInventoryController extends Controller
         $box->touch();
 
         return back()->with('status', 'Item bijgewerkt.');
+    }
+
+    public function moveItem(Request $request, int $number, StorageBoxItem $item): RedirectResponse
+    {
+        $sourceBox = $this->box($number);
+        abort_unless($item->storage_box_id === $sourceBox->id, 404);
+
+        $data = $request->validate([
+            'target_number' => ['required', 'integer', 'min:1', 'max:9999', 'different:source_number'],
+            'quantity' => ['required', 'integer', 'min:1', 'max:'.$item->quantity],
+        ]);
+
+        $targetNumber = (int) $data['target_number'];
+        if ($targetNumber === $sourceBox->number) {
+            return back()->withErrors(['target_number' => 'Kies een andere kist als bestemming.']);
+        }
+
+        $movedQuantity = (int) $data['quantity'];
+
+        DB::transaction(function () use ($sourceBox, $item, $targetNumber, $movedQuantity) {
+            $sourceItem = StorageBoxItem::query()
+                ->whereKey($item->id)
+                ->where('storage_box_id', $sourceBox->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($movedQuantity > $sourceItem->quantity) {
+                abort(422, 'Het te verplaatsen aantal is niet meer beschikbaar.');
+            }
+
+            $targetBox = StorageBox::firstOrCreate([
+                'location' => self::LOCATION,
+                'number' => $targetNumber,
+            ]);
+
+            $targetItem = $targetBox->items()
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower($sourceItem->name)])
+                ->lockForUpdate()
+                ->first();
+
+            if ($targetItem) {
+                $targetItem->update([
+                    'quantity' => $targetItem->quantity + $movedQuantity,
+                    'notes' => filled($targetItem->notes) ? $targetItem->notes : $sourceItem->notes,
+                ]);
+            } else {
+                $targetBox->items()->create([
+                    'name' => $sourceItem->name,
+                    'quantity' => $movedQuantity,
+                    'notes' => $sourceItem->notes,
+                ]);
+            }
+
+            if ($movedQuantity === $sourceItem->quantity) {
+                $sourceItem->delete();
+            } else {
+                $sourceItem->update(['quantity' => $sourceItem->quantity - $movedQuantity]);
+            }
+
+            $sourceBox->touch();
+            $targetBox->touch();
+        });
+
+        return back()->with('status', $movedQuantity.' × '.$item->name.' verplaatst naar kist '.$targetNumber.'.');
     }
 
     public function destroyItem(int $number, StorageBoxItem $item): RedirectResponse
@@ -142,6 +223,21 @@ class AtticBoxInventoryController extends Controller
         $box->touch();
 
         return back()->with('status', 'Fotoset opgeslagen. Je kunt hem nu met AI analyseren.');
+    }
+
+    public function showPhoto(int $number, StorageBoxPhoto $photo)
+    {
+        $box = $this->box($number);
+        abort_unless($photo->storage_box_id === $box->id, 404);
+        abort_unless(Storage::disk('local')->exists($photo->path), 404);
+
+        return response()->file(
+            Storage::disk('local')->path($photo->path),
+            [
+                'Content-Type' => Storage::disk('local')->mimeType($photo->path) ?: 'application/octet-stream',
+                'Cache-Control' => 'private, max-age=3600',
+            ],
+        );
     }
 
     public function analyze(int $number, InventoryVisionAnalyzer $analyzer): RedirectResponse
