@@ -60,10 +60,17 @@
         <h3 class="subheading">Opgeslagen foto's</h3>
         <div class="photo-grid">
             @foreach ($box->photos as $photo)
-                <a class="photo-card" href="{{ route('inventory.attic-boxes.photos.show', [$box->number, $photo]) }}" target="_blank" rel="noopener">
-                    <img src="{{ route('inventory.attic-boxes.photos.show', [$box->number, $photo]) }}" alt="Foto van kist {{ $box->number }}" loading="lazy">
+                <div class="photo-card">
+                    <a href="{{ route('inventory.attic-boxes.photos.show', [$box->number, $photo]) }}" target="_blank" rel="noopener">
+                        <img src="{{ route('inventory.attic-boxes.photos.show', [$box->number, $photo]) }}" alt="Foto van kist {{ $box->number }}" loading="lazy">
+                    </a>
                     <span>{{ $photo->created_at->format('d-m-Y H:i') }}</span>
-                </a>
+                    <form method="post" action="{{ route('inventory.attic-boxes.photos.destroy', [$box->number, $photo]) }}" onsubmit="return confirm('Deze foto definitief verwijderen?')">
+                        @csrf
+                        @method('delete')
+                        <button class="button danger full" type="submit">Foto verwijderen</button>
+                    </form>
+                </div>
             @endforeach
         </div>
     @endif
