@@ -117,16 +117,19 @@ monitor table growth and choose a retention policy before adding any pruning job
    }
    ```
 
-2. Identify the IKEA devices actually paired through Matter using Homey's device
-   information and the reported driver IDs. Select explicit IDs: do not infer IKEA
-   Matter membership from names or a guessed driver prefix. Zigbee IKEA devices must
-   not be included. The server stores the reported driver and does not independently
-   verify the device manufacturer or protocol.
+2. The upload script automatically selects devices where `driverUri` includes
+   `matter`, or the lowercase `driverId` includes `matter` or `ikea`, then sorts by
+   name. This is the requested broad selection: it may include non-IKEA Matter
+   devices and IKEA Zigbee devices. Review the matched devices in Homey.
+   The server does not independently verify manufacturer or protocol.
 3. Create a **new** script named `IKEA Matter availability upload` from
-   [ikea-availability.js](homey/ikea-availability.js). Set `DEVICE_IDS` to your selected
-   IDs and `WRITE_TOKEN` to the real write token locally in Homey only. Check the
-   HTTPS endpoint. A selected missing device or unknown availability aborts the upload
-   rather than manufacturing an offline status.
+   [ikea-availability.js](homey/ikea-availability.js). Set `WRITE_TOKEN` to the real
+   write token locally in Homey only and check the HTTPS endpoint. No device ID list
+   is required. The script obtains each zone with `device.getZone()` and logs offline
+   devices. Unknown availability or a failed zone lookup aborts the upload rather
+   than manufacturing a status. It sends the API's six fields; `class` and
+   `lastSeenAt` are not sent. `observed_at` is the time of this availability reading,
+   not the device's last sensor update.
 4. Test once manually; expect a success log and check the read API using the read
    token. Check the `driver`, zone and available values against Homey.
 5. Create a **new** Flow named `IKEA Matter availability hourly`: use the Date & Time

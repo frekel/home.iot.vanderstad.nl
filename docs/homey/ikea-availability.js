@@ -1,32 +1,39 @@
 // Copy into a NEW HomeyScript. Configure only in Homey, never commit the token.
 const ENDPOINT = 'https://home.iot.vanderstad.nl/api/v1/availability/snapshots';
 const WRITE_TOKEN = '';
-// Explicitly select your IKEA Matter devices after inspecting getDevices().
-const DEVICE_IDS = [];
-
-if (!ENDPOINT.startsWith('https://') || WRITE_TOKEN.length < 32 || DEVICE_IDS.length === 0) {
-  throw new Error('Configure HTTPS, the write token and IKEA Matter device IDs first.');
-}
-if (DEVICE_IDS.length > 500 || new Set(DEVICE_IDS).size !== DEVICE_IDS.length) {
-  throw new Error('Select 1–500 distinct device IDs.');
+if (!ENDPOINT.startsWith('https://') || WRITE_TOKEN.length < 32) {
+  throw new Error('Configure HTTPS and the write token first.');
 }
 const devices = await Homey.devices.getDevices();
-const zones = await Homey.zones.getZones();
-const observedAt = new Date().toISOString();
-const measurements = DEVICE_IDS.map(id => {
-  const device = devices[id];
-  if (!device || typeof device.available !== 'boolean' || !device.driverId || !device.name) {
-    throw new Error(`Device ${id} is missing or has no usable availability metadata.`);
+const matterDevices = Object.values(devices)
+  .filter(device =>
+    device.driverUri?.includes('matter') ||
+    device.driverId?.toLowerCase().includes('matter') ||
+    device.driverId?.toLowerCase().includes('ikea')
+  )
+  .sort((a, b) => a.name.localeCompare(b.name));
+
+if (matterDevices.length === 0 || matterDevices.length > 500) {
+  throw new Error('The Matter/IKEA selection must contain 1–500 devices.');
+}
+const measurements = [];
+for (const device of matterDevices) {
+  if (typeof device.available !== 'boolean' || !device.driverId || !device.name) {
+    throw new Error(`Device ${device.id} has no usable availability metadata.`);
   }
-  return {
+  const deviceZone = await device.getZone();
+  measurements.push({
     device_id: device.id,
     name: device.name,
-    zone: zones[device.zone]?.name ?? null,
+    zone: deviceZone?.name ?? null,
     driver: device.driverId,
     available: device.available,
-    observed_at: observedAt,
-  };
-});
+    observed_at: new Date().toISOString(),
+  });
+  if (device.available === false) {
+    log(`${device.name} in ${deviceZone?.name ?? 'unknown zone'} is not available`);
+  }
+}
 // Reuse the exact payload on retries, including timestamps.
 const body = JSON.stringify({ devices: measurements });
 for (let attempt = 0; attempt < 3; attempt++) {

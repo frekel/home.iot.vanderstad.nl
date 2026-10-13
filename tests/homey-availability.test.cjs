@@ -4,15 +4,13 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync('docs/homey/ikea-availability.js', 'utf8');
 
-async function run({ device, responses = [{ ok: true, status: 201 }] } = {}) {
+async function run({ device, devices, responses = [{ ok: true, status: 201 }] } = {}) {
   const calls = [];
   const waits = [];
-  const script = source.replace("const WRITE_TOKEN = '';", "const WRITE_TOKEN = 'local-test-token-with-32-characters';")
-    .replace('const DEVICE_IDS = [];', "const DEVICE_IDS = ['ikea-1'];");
+  const script = source.replace("const WRITE_TOKEN = '';", "const WRITE_TOKEN = 'local-test-token-with-32-characters';");
   const context = {
     Homey: {
-      devices: { getDevices: async () => ({ 'ikea-1': device ?? { id: 'ikea-1', name: 'Lamp', zone: 'room', driverId: 'actual-driver', available: false } }) },
-      zones: { getZones: async () => ({ room: { name: 'Living' } }) },
+      devices: { getDevices: async () => devices ?? ({ 'ikea-1': device ?? { id: 'ikea-1', name: 'Lamp', driverId: 'actual-matter-driver', available: false, getZone: async () => ({ name: 'Living' }) } }) },
     },
     log: () => {}, wait: async delay => waits.push(delay),
     fetch: async (url, options) => {
@@ -31,7 +29,7 @@ test('reports false availability with actual driver and zone metadata', async ()
   assert.equal(await result, true);
   const body = JSON.parse(calls[0].options.body);
   assert.deepEqual(body.devices[0], {
-    device_id: 'ikea-1', name: 'Lamp', zone: 'Living', driver: 'actual-driver',
+    device_id: 'ikea-1', name: 'Lamp', zone: 'Living', driver: 'actual-matter-driver',
     available: false, observed_at: body.devices[0].observed_at,
   });
   assert.equal(calls[0].options.redirect, 'error');
@@ -46,7 +44,7 @@ test('retries a lost response with an identical payload', async () => {
 });
 
 test('unknown availability aborts without sending a fabricated offline sample', async () => {
-  const { result, calls } = await run({ device: { id: 'ikea-1', name: 'Lamp', driverId: 'actual-driver' } });
+  const { result, calls } = await run({ device: { id: 'ikea-1', name: 'Lamp', driverId: 'actual-matter-driver' } });
   await assert.rejects(result, /no usable availability metadata/);
   assert.equal(calls.length, 0);
 });
@@ -55,4 +53,28 @@ test('authentication failure throws without retrying', async () => {
   const { result, calls } = await run({ responses: [{ ok: false, status: 401 }] });
   await assert.rejects(result, /HTTP 401/);
   assert.equal(calls.length, 1);
+});
+
+
+test('selects every requested driver match, excludes other devices and sorts by name', async () => {
+  const make = (id, name, fields) => ({ id, name, available: true, getZone: async () => ({ name: 'Room' }), ...fields });
+  const devices = {
+    uri: make('uri', 'C lamp', { driverUri: 'homey:matter', driverId: 'generic-driver' }),
+    matter: make('matter', 'A sensor', { driverId: 'MATTER:sensor' }),
+    ikea: make('ikea', 'B remote', { driverId: 'IKEA:zigbee' }),
+    other: make('other', 'Other', { driverId: 'other:driver' }),
+    absent: make('absent', 'No driver', {}),
+  };
+  const { result, calls } = await run({ devices });
+  assert.equal(await result, true);
+  assert.deepEqual(JSON.parse(calls[0].options.body).devices.map(d => d.device_id), ['matter', 'ikea', 'uri']);
+});
+
+test('empty selection and zone lookup failures abort without sending', async () => {
+  const empty = await run({ devices: {} });
+  await assert.rejects(empty.result, /1–500 devices/);
+  assert.equal(empty.calls.length, 0);
+  const failed = await run({ device: { id: 'ikea-1', name: 'Lamp', available: true, driverId: 'matter', getZone: async () => { throw new Error('zone lookup failed'); } } });
+  await assert.rejects(failed.result, /zone lookup failed/);
+  assert.equal(failed.calls.length, 0);
 });
