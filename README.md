@@ -146,3 +146,10 @@ Open **Meubels**, selecteer een nummer en vul breedte, diepte, hoogte en de onde
 DDEV installeert Blender en start de worker via `.ddev/config.furniture.yaml`; voer na ophalen van nieuwe migraties `ddev exec php artisan migrate --force` en zo nodig `ddev restart` uit. Docker Compose bevat een aparte `furniture-worker` met dezelfde database en storage-volume als de webapp. Voer bij deployment altijd de Laravel-migraties uit. Er is geen Node-build nodig na het wijzigen van meubelmaten via de editor.
 
 Gegenereerde modellen en logs staan onder `storage/app/furniture/<revisie>`. Maak een back-up van zowel de database als het storage-volume. `BLENDER_BINARY` kan het Blender-pad overschrijven (standaard `/usr/bin/blender`). Bouwlogs zijn alleen lokaal beschikbaar. De editor wijzigt maten rond het bestaande middelpunt; plaatsing en wandafstand worden niet automatisch opnieuw berekend. De hoge meubels behouden de bestaande afsnijding op muurhoogte.
+
+## IKEA Matter availability monitoring
+
+A separate hourly HomeyScript can submit availability snapshots over local HTTPS.
+See [setup, API contracts and Flow instructions](docs/homey-availability.md).
+Write and read tokens are separate from the existing Homey connection; the daily
+battery check and dashboard polling remain unchanged.
