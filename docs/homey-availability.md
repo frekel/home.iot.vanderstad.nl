@@ -117,10 +117,10 @@ monitor table growth and choose a retention policy before adding any pruning job
    }
    ```
 
-2. The upload script automatically selects devices where `driverUri` includes
-   `matter`, or the lowercase `driverId` includes `matter` or `ikea`, then sorts by
-   name. This is the requested broad selection: it may include non-IKEA Matter
-   devices and IKEA Zigbee devices. Review the matched devices in Homey.
+2. The upload script selects devices whose `driverId` contains `ikea` **and**
+   whose `driverUri` or `driverId` contains `matter` (case-insensitive), then sorts
+   by name. An IKEA match alone or a Matter match alone is insufficient.
+   Review the matched devices in Homey.
    The server does not independently verify manufacturer or protocol.
 3. Create a **new** script named `IKEA Matter availability upload` from
    [ikea-availability.js](homey/ikea-availability.js). Set `WRITE_TOKEN` to the real

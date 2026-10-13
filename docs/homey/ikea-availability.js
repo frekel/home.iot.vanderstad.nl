@@ -7,14 +7,16 @@ if (!ENDPOINT.startsWith('https://') || WRITE_TOKEN.length < 32) {
 const devices = await Homey.devices.getDevices();
 const matterDevices = Object.values(devices)
   .filter(device =>
-    device.driverUri?.includes('matter') ||
-    device.driverId?.toLowerCase().includes('matter') ||
+    (
+      device.driverUri?.toLowerCase().includes('matter') ||
+      device.driverId?.toLowerCase().includes('matter')
+    ) &&
     device.driverId?.toLowerCase().includes('ikea')
   )
   .sort((a, b) => a.name.localeCompare(b.name));
 
 if (matterDevices.length === 0 || matterDevices.length > 500) {
-  throw new Error('The Matter/IKEA selection must contain 1–500 devices.');
+  throw new Error('The IKEA Matter selection must contain 1–500 devices.');
 }
 const measurements = [];
 for (const device of matterDevices) {
