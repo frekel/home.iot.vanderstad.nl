@@ -113,6 +113,26 @@ class AvailabilityTest extends TestCase
         $this->assertDatabaseCount('availability_snapshots', 3);
     }
 
+    public function test_report_includes_latest_metadata_and_uses_seven_day_default(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 15)->setTime(14, 0));
+        $this->ingest([$this->device(['observed_at' => '2026-10-07T10:00:00Z'])])->assertCreated();
+        $this->ingest([$this->device(['name' => 'Renamed', 'zone' => 'Bedroom', 'available' => false, 'observed_at' => '2026-10-14T10:00:00Z'])])->assertCreated();
+        $headers = ['Authorization' => 'Bearer '.self::READ];
+
+        $this->getJson(self::URL.'/report?device_id=ikea-1', $headers)
+            ->assertOk()->assertJsonPath('data.0.name', 'Renamed')
+            ->assertJsonPath('data.0.zone', 'Bedroom')
+            ->assertJsonPath('data.0.available', false)
+            ->assertJsonPath('data.0.stale', true)
+            ->assertJsonPath('data.0.observed_at', '2026-10-14T10:00:00+00:00')
+            ->assertJsonPath('data.0.samples', 1)
+            ->assertJsonPath('data.0.offline_samples', 1)
+            ->assertJsonPath('data.0.online_sample_percent', 0);
+        $this->getJson(self::URL.'/report?device_id=ikea-1&from=2026-10-07T00:00:00Z', $headers)
+            ->assertOk()->assertJsonPath('data.0.samples', 2);
+    }
+
     public function test_read_filters_reject_invalid_or_unbounded_queries(): void
     {
         $headers = ['Authorization' => 'Bearer '.self::READ];
