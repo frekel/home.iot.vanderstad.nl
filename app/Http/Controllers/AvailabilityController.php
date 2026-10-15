@@ -95,16 +95,21 @@ class AvailabilityController extends Controller
 
     public function report(Request $request): JsonResponse
     {
-        $rows = $this->query($request, 'availability_snapshots')->select('device_id')
-            ->selectRaw('COUNT(*) as samples, SUM(CASE WHEN available = 1 THEN 1 ELSE 0 END) as online_samples, SUM(CASE WHEN available = 0 THEN 1 ELSE 0 END) as offline_samples')
-            ->groupBy('device_id')->orderBy('device_id')->paginate($request->integer('per_page', 50))->withQueryString();
+        $rows = $this->query($request, 'availability_snapshots', true, 7)
+            ->join('availability_devices as current_device', 'availability_snapshots.device_id', '=', 'current_device.device_id')
+            ->select('availability_snapshots.device_id', 'current_device.name', 'current_device.zone', 'current_device.driver', 'current_device.available', 'current_device.observed_at')
+            ->selectRaw('COUNT(*) as samples, SUM(CASE WHEN availability_snapshots.available = 1 THEN 1 ELSE 0 END) as online_samples, SUM(CASE WHEN availability_snapshots.available = 0 THEN 1 ELSE 0 END) as offline_samples')
+            ->groupBy('availability_snapshots.device_id', 'current_device.name', 'current_device.zone', 'current_device.driver', 'current_device.available', 'current_device.observed_at')
+            ->orderByDesc('offline_samples')->orderBy('availability_snapshots.device_id')
+            ->paginate($request->integer('per_page', 50))->withQueryString();
         $rows->getCollection()->transform(function (object $row): object {
             foreach (['samples', 'online_samples', 'offline_samples'] as $key) {
                 $row->$key = (int) $row->$key;
             }
             $row->online_sample_percent = round(100 * $row->online_samples / $row->samples, 2);
+            $row->stale = $row->observed_at === null || CarbonImmutable::parse($row->observed_at, 'UTC')->lt(now()->utc()->subMinutes(config('availability.stale_after_minutes')));
 
-            return $row;
+            return $this->serialize($row);
         });
 
         return response()->json($rows);
@@ -119,7 +124,7 @@ class AvailabilityController extends Controller
         return response()->json($page);
     }
 
-    private function query(Request $request, string $table, bool $period = true): Builder
+    private function query(Request $request, string $table, bool $period = true, int $defaultDays = 30): Builder
     {
         $data = $request->validate([
             'device_id' => ['sometimes', 'required', 'string', 'max:128', 'regex:/^[A-Za-z0-9_-]+$/'],
@@ -133,7 +138,7 @@ class AvailabilityController extends Controller
             $query->where('device_id', $data['device_id']);
         }
         if ($period) {
-            $from = CarbonImmutable::parse($data['from'] ?? now()->subDays(30)->toIso8601String())->utc();
+            $from = CarbonImmutable::parse($data['from'] ?? now()->subDays($defaultDays)->toIso8601String())->utc();
             $to = CarbonImmutable::parse($data['to'] ?? now()->toIso8601String())->utc();
             if ($to->lt($from) || $from->diffInDays($to) > 366) {
                 throw ValidationException::withMessages(['to' => 'Select a period of at most 366 days after from.']);
