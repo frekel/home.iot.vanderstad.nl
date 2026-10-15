@@ -135,7 +135,7 @@ class AvailabilityController extends Controller
         ]);
         $query = DB::table($table);
         if (isset($data['device_id'])) {
-            $query->where('device_id', $data['device_id']);
+            $query->where($table.'.device_id', $data['device_id']);
         }
         if ($period) {
             $from = CarbonImmutable::parse($data['from'] ?? now()->subDays($defaultDays)->toIso8601String())->utc();
@@ -143,7 +143,7 @@ class AvailabilityController extends Controller
             if ($to->lt($from) || $from->diffInDays($to) > 366) {
                 throw ValidationException::withMessages(['to' => 'Select a period of at most 366 days after from.']);
             }
-            $query->whereBetween('observed_at', [$from->format('Y-m-d H:i:s'), $to->format('Y-m-d H:i:s')]);
+            $query->whereBetween($table.'.observed_at', [$from->format('Y-m-d H:i:s'), $to->format('Y-m-d H:i:s')]);
         }
 
         return $query;
