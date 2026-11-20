@@ -3,7 +3,7 @@ import {startFurniturePolling,stopFurniturePolling} from './furniture';
 import {onBeforeUnmount as onFurnitureUnmount,onMounted as onFurnitureMounted} from 'vue';
 onFurnitureMounted(startFurniturePolling);onFurnitureUnmount(stopFurniturePolling);
 import {computed,ref,onMounted,onBeforeUnmount,nextTick,watch} from 'vue';
-import {House, Layers, Lightbulb, Thermometer, Droplets, Settings, ChevronRight, WifiOff, X, DoorOpen} from '@lucide/vue';
+import {House, Layers, Lightbulb, Thermometer, Droplets, Settings, RotateCcw, ChevronRight, WifiOff, X, DoorOpen} from '@lucide/vue';
 import HouseScene from './components/HouseScene.vue';
 import {house} from './house';
 import FurnitureCatalogue from './components/FurnitureCatalogue.vue';
@@ -169,5 +169,5 @@ async function toggleRoom(id:string){
 .toilet-modal-toolbar h2{margin:4px 0 0;font-size:19px;font-weight:500;color:#e9edf2}
 .toilet-demo-label{font-size:10px;font-weight:600;letter-spacing:.4px;color:#f1a21a}
 .toilet-frame{width:100%;flex:1;min-height:0;display:block;border:0;background:#101113}
-@media(max-width:750px){.toilet-backdrop{padding:0}.toilet-modal{width:100vw;height:100dvh;min-height:0;border-radius:0}.toilet-modal-toolbar{padding:12px;gap:8px;flex-wrap:wrap}.toilet-modal-toolbar h2{font-size:16px}.toilet-demo-label{display:none}.toilet-reset-button{padding:7px 9px;font-size:11px}}
+@media(max-width:750px){.toilet-backdrop{padding:0}.toilet-modal{width:100vw;height:100dvh;min-height:0;border-radius:0}.toilet-modal-toolbar{padding:12px;gap:8px;flex-wrap:wrap}.toilet-modal-toolbar h2{font-size:16px}.toilet-demo-label{display:none}}
 </style>
