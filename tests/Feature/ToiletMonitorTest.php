@@ -192,6 +192,101 @@ class ToiletMonitorTest extends TestCase
             ->assertJsonPath('flushes_total', 21);
     }
 
+    public function test_reset_clears_both_visible_counters_without_reusing_esp32_event_ids(): void
+    {
+        $this->heartbeat()->assertOk();
+        $this->event()->assertCreated();
+        $this->getJson(self::API.'/state')
+            ->assertJsonPath('flushes_total', 20)
+            ->assertJsonPath('flushes_today', 1);
+
+        $this->travelTo(CarbonImmutable::parse('2026-11-20T09:01:00Z'));
+        $this->postJson('https://localhost/dashboard/toilet/reset', ['confirm' => 'RESET'])
+            ->assertOk()
+            ->assertJsonPath('flushes_total', 0)
+            ->assertJsonPath('flushes_today', 0);
+
+        $this->getJson(self::API.'/state')
+            ->assertJsonPath('flushes_total', 0)
+            ->assertJsonPath('flushes_today', 0)
+            ->assertJsonPath('last_flush', null);
+
+        // Old event IDs stay in place, and a delayed queued test event
+        // must not bring earlier tests back into the visible counts.
+        $this->event()->assertOk()->assertJsonPath('duplicate', true);
+        $this->event([
+            'event_id' => 'toilet-01-00000019',
+            'timestamp' => '2026-11-20T08:59:30Z',
+            'flushes_total' => 19,
+        ])->assertCreated();
+        $this->heartbeat([
+            'flushes_total' => 21,
+            'observed_at' => '2026-11-20T09:01:00Z',
+        ])->assertOk();
+        $this->getJson(self::API.'/state')
+            ->assertJsonPath('flushes_total', 0)
+            ->assertJsonPath('flushes_today', 0);
+
+        $this->travelTo(CarbonImmutable::parse('2026-11-20T09:02:00Z'));
+        $this->event([
+            'event_id' => 'toilet-01-00000022',
+            'timestamp' => '2026-11-20T09:02:00Z',
+            'flushes_total' => 22,
+        ])->assertCreated();
+
+        $this->getJson(self::API.'/state')
+            ->assertJsonPath('flushes_total', 1)
+            ->assertJsonPath('flushes_today', 1)
+            ->assertJsonPath('last_flush', CarbonImmutable::parse('2026-11-20T09:02:00Z')->timestamp);
+
+        $this->assertDatabaseCount('toilet_events', 3);
+        $this->assertDatabaseHas('toilet_devices', [
+            'device_id' => 'toilet-01',
+            'flushes_total' => 22,
+        ]);
+
+        // A second reset opens a new counting period.
+        $this->travelTo(CarbonImmutable::parse('2026-11-20T09:03:00Z'));
+        $this->postJson('https://localhost/dashboard/toilet/reset', ['confirm' => 'RESET'])->assertOk();
+        $this->getJson(self::API.'/state')
+            ->assertJsonPath('flushes_total', 0)
+            ->assertJsonPath('flushes_today', 0)
+            ->assertJsonPath('last_flush', null);
+    }
+
+    public function test_reset_requires_https_json_and_explicit_confirmation(): void
+    {
+        $this->postJson('http://localhost/dashboard/toilet/reset', ['confirm' => 'RESET'])
+            ->assertForbidden();
+
+        $this->post('https://localhost/dashboard/toilet/reset', ['confirm' => 'RESET'])
+            ->assertStatus(415);
+
+        $this->postJson('https://localhost/dashboard/toilet/reset', [])
+            ->assertUnprocessable();
+
+        $this->postJson('https://localhost/dashboard/toilet/reset', ['confirm' => 'no'])
+            ->assertUnprocessable();
+
+        $this->assertDatabaseCount('toilet_devices', 0);
+    }
+
+    public function test_reset_before_first_heartbeat_starts_at_zero_and_ignores_late_tests(): void
+    {
+        $this->postJson('https://localhost/dashboard/toilet/reset', ['confirm' => 'RESET'])
+            ->assertOk();
+
+        $this->getJson(self::API.'/state')
+            ->assertJsonPath('stale', true)
+            ->assertJsonPath('flushes_total', 0)
+            ->assertJsonPath('flushes_today', 0);
+
+        $this->heartbeat()->assertOk();
+        $this->getJson(self::API.'/state')
+            ->assertJsonPath('flushes_total', 0)
+            ->assertJsonPath('flushes_today', 0);
+    }
+
     public function test_bad_payloads_do_not_write_any_data(): void
     {
         foreach ([

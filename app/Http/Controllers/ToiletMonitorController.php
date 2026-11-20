@@ -115,6 +115,42 @@ class ToiletMonitorController extends Controller
         return response()->json(['accepted' => $accepted]);
     }
 
+    /**
+     * Starts a new visible counting period without rewriting the ESP32's
+     * monotonic counter or deleting event IDs (needed for safe retries).
+     */
+    public function reset(Request $request): JsonResponse
+    {
+        abort_unless($request->isSecure(), 403, 'HTTPS is required.');
+        abort_unless($request->isJson(), 415, 'Send application/json.');
+
+        $request->validate([
+            'confirm' => ['required', 'in:RESET'],
+        ]);
+
+        $resetAt = DB::transaction(function (): string {
+            $id = config('toilet.device_id');
+            DB::table('toilet_devices')->insertOrIgnore(['device_id' => $id, 'flushes_total' => 0]);
+            DB::table('toilet_devices')->where('device_id', $id)->lockForUpdate()->first();
+
+            $resetAt = now()->utc()->format('Y-m-d H:i:s');
+
+            DB::table('toilet_devices')->where('device_id', $id)->update([
+                'counter_reset_at' => $resetAt,
+            ]);
+
+            return $resetAt;
+        }, 3);
+
+        return response()->json([
+            'reset' => true,
+            'device_id' => config('toilet.device_id'),
+            'reset_at' => CarbonImmutable::parse($resetAt, 'UTC')->toIso8601String(),
+            'flushes_today' => 0,
+            'flushes_total' => 0,
+        ])->header('Cache-Control', 'no-store, private');
+    }
+
     public function state(): JsonResponse
     {
         $now = CarbonImmutable::now('UTC');
@@ -127,11 +163,36 @@ class ToiletMonitorController extends Controller
 
         $today = $now->setTimezone('Europe/Amsterdam')->startOfDay();
         $tomorrow = $today->addDay();
-        $todayCount = $device === null ? null : DB::table('toilet_events')
-            ->where('device_id', $device->device_id)
-            ->where('occurred_at', '>=', $today->utc()->format('Y-m-d H:i:s'))
-            ->where('occurred_at', '<', $tomorrow->utc()->format('Y-m-d H:i:s'))
-            ->count();
+        $todayCount = null;
+        $totalCount = null;
+        $lastFlush = null;
+
+        if ($device !== null) {
+            // Before the first reset, preserve the original raw hardware total.
+            // After a reset, only distinct events occurring after the reset
+            // contribute to either visible counter. Late queued test events
+            // cannot resurrect old flushes.
+            $resetAt = $device->counter_reset_at;
+            $events = DB::table('toilet_events')
+                ->where('device_id', $device->device_id);
+
+            if ($resetAt !== null) {
+                $events->where('occurred_at', '>', $resetAt);
+                $totalCount = (clone $events)->count();
+                $last = (clone $events)->max('occurred_at');
+                $lastFlush = $last ? CarbonImmutable::parse($last, 'UTC')->timestamp : null;
+            } else {
+                $totalCount = (int) $device->flushes_total;
+                $lastFlush = $device->last_flush_at
+                    ? CarbonImmutable::parse($device->last_flush_at, 'UTC')->timestamp
+                    : null;
+            }
+
+            $todayCount = (clone $events)
+                ->where('occurred_at', '>=', $today->utc()->format('Y-m-d H:i:s'))
+                ->where('occurred_at', '<', $tomorrow->utc()->format('Y-m-d H:i:s'))
+                ->count();
+        }
 
         $floatUp = $device?->float_up === null ? null : (bool) $device->float_up;
 
@@ -142,10 +203,13 @@ class ToiletMonitorController extends Controller
             'float_up' => $floatUp,
             'switch_closed' => $floatUp === null ? null : ! $floatUp,
             'low_since' => $device?->low_since ? CarbonImmutable::parse($device->low_since, 'UTC')->timestamp : null,
-            'flushes_total' => $device === null ? null : (int) $device->flushes_total,
+            'flushes_total' => $totalCount,
             'flushes_today' => $todayCount,
             'day' => $today->format('Y-m-d'),
-            'last_flush' => $device?->last_flush_at ? CarbonImmutable::parse($device->last_flush_at, 'UTC')->timestamp : null,
+            'last_flush' => $lastFlush,
+            'reset_at' => $device?->counter_reset_at
+                ? CarbonImmutable::parse($device->counter_reset_at, 'UTC')->timestamp
+                : null,
             'updated' => $lastSeen?->timestamp,
             'now' => $now->timestamp,
             'stale' => $stale,

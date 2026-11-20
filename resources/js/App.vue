@@ -20,6 +20,7 @@ const floor=ref('ground'),selected=ref('living'),settings=ref(false),scene=ref<I
 const showFurniture=ref(new URLSearchParams(location.search).has('meubels'));
 const showLights=ref(false);
 const showToilet=ref(false),toiletClose=ref<HTMLButtonElement>();
+const toiletResetting=ref(false),toiletResetError=ref(''),toiletFrameKey=ref(0);
 watch(showToilet,async visible=>{if(visible){await nextTick();toiletClose.value?.focus()}});
 const knownLights=ref<Device[]>([]);
 const allLights=computed(()=>knownLights.value.slice().sort((a,b)=>(a.zone_name??'').localeCompare(b.zone_name??'','nl') || a.name.localeCompare(b.name,'nl')));
@@ -70,6 +71,21 @@ async function refreshEnergy(){
 onMounted(refreshEnergy);onBeforeUnmount(()=>clearTimeout(energyTimer));
 function chooseFloor(id:string){showToilet.value=false;floor.value=id;selected.value=floors.value.find(f=>f.id===id)!.rooms[0]!.id}
 function selectRoom(id:string){selected.value=id;if(floor.value==='ground'&&id==='wc')showToilet.value=true}
+async function resetToiletCounters(){
+ if(toiletResetting.value)return;
+ if(!window.confirm('Reset today\'s and total flush counters to zero? Previous test events will no longer count.'))return;
+ toiletResetting.value=true;toiletResetError.value='';
+ try{
+  const csrf=document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content??'';
+  const response=await fetch('/dashboard/toilet/reset',{
+   method:'POST',credentials:'same-origin',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf},
+   body:JSON.stringify({confirm:'RESET'}),signal:AbortSignal.timeout(12000)
+  });
+  if(!response.ok)throw new Error('Reset failed (HTTP '+response.status+'). Please try again.');
+  toiletFrameKey.value++;
+ }catch(error){toiletResetError.value=error instanceof Error?error.message:'Reset failed.'}
+ finally{toiletResetting.value=false}
+}
 async function toggle(id:string){
  if(commandBusy.value[id]||pending.value[id]||!connection.value.connected)return;
  commandBusy.value[id]=true;commandError.value[id]='';
@@ -126,7 +142,7 @@ async function toggleRoom(id:string){
 </div>
 <div v-if="settings" class="modal-backdrop" @click.self="settings=false"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="connection-title"><button class="icon-button close" aria-label="Close connection details" @click="settings=false"><X :size="20"/></button><span class="eyebrow">HOMEY PRO 2023</span><h2 id="connection-title">Connect your home</h2><p>Control every Homey light from its room or the All lights view.</p><p>Device states refresh every five seconds. Living-room climate comes from the linked sensor; energy reports come directly from Homey Energy and refresh every minute.</p><div class="connection-state"><WifiOff :size="18"/> {{connection.message}}</div><button class="primary" :disabled="checking" @click="checkConnection">{{checking ? 'Checking…' : 'Check connection'}}</button><div class="zone-tree" v-if="zoneTree.length"><h3>Rooms from Homey</h3><p>Names and hierarchy sync from Homey within one minute.</p><div v-for="zone in zoneTree" :key="zone.id" :style="{paddingLeft:`${zone.depth*16}px`}"><Layers :size="13"/>{{zone.name}}</div></div><div class="device-list" v-if="connection.devices.length"><h3>{{connection.devices.length}} live devices</h3><article v-for="device in connection.devices" :key="device.id"><strong>{{device.name}}</strong><small>{{device.zone_name || 'No zone'}} · {{device.available ? 'Available' : 'Unavailable'}}</small><small v-for="(measurement,capability) in device.measurements" :key="capability">{{capability}}: {{measurement.value ?? 'Unknown'}} {{measurement.units}}</small></article></div><button class="primary" @click="settings=false">Back to the house</button></section></div>
 <div v-if="showLights" class="modal-backdrop" @click.self="showLights=false"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="lights-title"><button class="icon-button close" aria-label="Close lights" @click="showLights=false"><X :size="20"/></button><span class="eyebrow">HOMEY LIGHTS</span><h2 id="lights-title">All lights</h2><p>Switch lights individually. States refresh from Homey every five seconds.</p><LightControls :devices="allLights" :connected="connection.connected" :busy="commandBusy" :pending="pending" :errors="commandError" @toggle="toggle"/></section></div>
-<div v-if="showToilet" class="modal-backdrop toilet-backdrop" @click.self="showToilet=false"><section class="toilet-modal" role="dialog" aria-modal="true" aria-labelledby="toilet-modal-title" @keydown.esc="showToilet=false"><div class="toilet-modal-toolbar"><div><span class="toilet-modal-kicker">TOILET · BENEDEN</span><h2 id="toilet-modal-title">Flush Control</h2></div><span class="toilet-demo-label">ESP32 · LIVE STATUS</span><button ref="toiletClose" type="button" class="icon-button" aria-label="Sluit Flush Control" @click="showToilet=false"><X :size="20"/></button></div><iframe class="toilet-frame" src="/toilet/flush-control.html" title="NetworkChuck Flush Control · status van de toiletmonitor"></iframe><div class="toilet-modal-credit">Design: <a href="https://github.com/theNetworkChuck/toilet-monitor-guide" target="_blank" rel="noopener noreferrer">NetworkChuck</a> · MIT-licentie · Live gegevens via home.iot · wacht op ESP32 indien offline</div></section></div>
+<div v-if="showToilet" class="modal-backdrop toilet-backdrop" @click.self="showToilet=false"><section class="toilet-modal" role="dialog" aria-modal="true" aria-labelledby="toilet-modal-title" @keydown.esc="showToilet=false"><div class="toilet-modal-toolbar"><div><span class="toilet-modal-kicker">TOILET · BENEDEN</span><h2 id="toilet-modal-title">Flush Control</h2></div><span class="toilet-demo-label">ESP32 · LIVE STATUS</span><button type="button" class="toilet-reset-button" :disabled="toiletResetting" @click="resetToiletCounters"><RotateCcw :size="15"/>{{toiletResetting?'Resetting…':'Reset counters'}}</button><button ref="toiletClose" type="button" class="icon-button" aria-label="Sluit Flush Control" @click="showToilet=false"><X :size="20"/></button></div><p v-if="toiletResetError" role="alert" class="toilet-reset-error">{{toiletResetError}}</p><iframe :key="toiletFrameKey" class="toilet-frame" src="/toilet/flush-control.html" title="NetworkChuck Flush Control · status van de toiletmonitor"></iframe><div class="toilet-modal-credit">Design: <a href="https://github.com/theNetworkChuck/toilet-monitor-guide" target="_blank" rel="noopener noreferrer">NetworkChuck</a> · MIT-licentie · Live gegevens via home.iot · wacht op ESP32 indien offline</div></section></div>
 <FurnitureCatalogue v-if="showFurniture" :initial-floor="floor" :room-label="furnitureRoomLabel" @close="showFurniture=false"/>
 </template>
 
@@ -168,8 +184,13 @@ async function toggleRoom(id:string){
 .toilet-modal-kicker{display:block;font-size:10px;font-weight:600;letter-spacing:1.2px;color:#9aa4b1}
 .toilet-modal-toolbar h2{margin:4px 0 0;font-size:19px;font-weight:500;color:#e9edf2}
 .toilet-demo-label{font-size:10px;font-weight:600;letter-spacing:.4px;color:#f1a21a}
+.toilet-reset-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:transparent;border:1px solid #596373;border-radius:8px;padding:8px 12px;color:#d9e2ee;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer}
+.toilet-reset-button:hover:not(:disabled){background:#303b4b}
+.toilet-reset-button:disabled{opacity:.55;cursor:wait}
+.toilet-reset-button:focus-visible{outline:2px solid #f1a21a;outline-offset:2px}
+.toilet-reset-error{margin:0;background:#451e1e;color:#ffd7d7;font-size:12px;padding:8px 20px}
 .toilet-frame{width:100%;flex:1;min-height:0;display:block;border:0;background:#101113}
 .toilet-modal-credit{padding:9px 20px;font-size:10px;line-height:1.4;color:#8d98a7;background:#1b222c}
 .toilet-modal-credit a{color:#f1a21a;text-decoration:underline}
-@media(max-width:750px){.toilet-backdrop{padding:0}.toilet-modal{width:100vw;height:100dvh;min-height:0;border-radius:0}.toilet-modal-toolbar{padding:12px}.toilet-modal-toolbar h2{font-size:16px}.toilet-demo-label{max-width:110px;line-height:1.4}.toilet-modal-credit{padding:8px 12px}}
+@media(max-width:750px){.toilet-backdrop{padding:0}.toilet-modal{width:100vw;height:100dvh;min-height:0;border-radius:0}.toilet-modal-toolbar{padding:12px;gap:8px;flex-wrap:wrap}.toilet-modal-toolbar h2{font-size:16px}.toilet-demo-label{display:none}.toilet-reset-button{padding:7px 9px;font-size:11px}.toilet-reset-error{padding:8px 12px}.toilet-modal-credit{padding:8px 12px}}
 </style>
