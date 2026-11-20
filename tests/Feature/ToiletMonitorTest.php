@@ -271,6 +271,18 @@ class ToiletMonitorTest extends TestCase
         $this->assertDatabaseCount('toilet_devices', 0);
     }
 
+    public function test_reset_allows_repeated_confirmations_during_testing(): void
+    {
+        // Regression: the previous limit of three resets per minute caused 429s
+        // during the bench test and prevented the user from starting clean.
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $this->postJson('https://localhost/dashboard/toilet/reset', ['confirm' => 'RESET'])
+                ->assertOk()
+                ->assertJsonPath('flushes_total', 0)
+                ->assertJsonPath('flushes_today', 0);
+        }
+    }
+
     public function test_reset_before_first_heartbeat_starts_at_zero_and_ignores_late_tests(): void
     {
         $this->postJson('https://localhost/dashboard/toilet/reset', ['confirm' => 'RESET'])
