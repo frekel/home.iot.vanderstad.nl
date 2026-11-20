@@ -81,6 +81,10 @@ async function resetToiletCounters(){
    method:'POST',credentials:'same-origin',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf},
    body:JSON.stringify({confirm:'RESET'}),signal:AbortSignal.timeout(12000)
   });
+  if(response.status===429){
+   const retryAfter=Number(response.headers.get('Retry-After'));
+   throw new Error('Too many reset requests. Try again in '+(Number.isFinite(retryAfter)&&retryAfter>0?Math.ceil(retryAfter):60)+' seconds.');
+  }
   if(!response.ok)throw new Error('Reset failed (HTTP '+response.status+'). Please try again.');
   toiletFrameKey.value++;
  }catch(error){toiletResetError.value=error instanceof Error?error.message:'Reset failed.'}
