@@ -162,7 +162,7 @@ async function toggleRoom(id:string){
  .dashboard-metrics .metric{height:175px}
 }
 .toilet-backdrop{z-index:30;padding:12px}
-.toilet-modal{display:flex;flex-direction:column;width:min(1600px,96vw);height:min(950px,94dvh);min-height:300px;overflow:hidden;background:#101113;border:1px solid #ffffff28;border-radius:18px;box-shadow:0 25px 90px #000b}
+.toilet-modal{display:flex;flex-direction:column;width:min(1600px,96vw);height:min(800px,94dvh);min-height:300px;overflow:hidden;background:#101113;border:1px solid #ffffff28;border-radius:18px;box-shadow:0 25px 90px #000b}
 .toilet-modal-toolbar{display:flex;align-items:center;gap:16px;padding:14px 20px;background:#1b222c;border-bottom:1px solid #ffffff18}
 .toilet-modal-toolbar>div:first-child{flex:1;min-width:0}
 .toilet-modal-kicker{display:block;font-size:10px;font-weight:600;letter-spacing:1.2px;color:#9aa4b1}
