@@ -39,7 +39,7 @@ SOFTWARE.
 .orbit{position:absolute;width:1400px;height:800px;border:1px solid #f1a21a18;border-radius:50%;transform:rotate(-28deg);top:-520px;right:-220px;pointer-events:none}.orbit:after{content:"✦";position:absolute;bottom:100px;left:170px;color:var(--orange);font-size:45px}
 header{position:relative;height:108px;display:flex;align-items:center;gap:28px;margin-bottom:26px}.logo{width:82px;height:100px;object-fit:contain}.brand{flex:1}.eyebrow{color:var(--muted);font-size:28px;letter-spacing:.12em;font-weight:600}.brand h1{font:900 66px/.98 Archivo,'Arial Black',sans-serif;letter-spacing:-.045em;margin:6px 0 0}.brand h1 span{color:var(--orange)}.header-right{text-align:right}.tagline{font-family:'JetBrains Mono',monospace;font-size:28px;letter-spacing:.025em;margin-bottom:13px}.source{display:inline-flex;align-items:center;gap:12px;font-size:28px;font-weight:700}.source:before{content:"";width:13px;height:13px;border:3px solid currentColor;transform:rotate(45deg)}.source.connected:before{background:var(--cream);border-radius:50%;transform:none;box-shadow:0 0 0 6px #f1efe412}.source.demo{color:var(--orange)}
 .layout{height:774px;display:grid;grid-template-columns:1040px 748px;gap:28px;position:relative}.panel{background:linear-gradient(145deg,#292c2b,#222425);border:1px solid #62645a;border-radius:24px;position:relative;overflow:hidden;box-shadow:0 14px 34px #0002}.tank-panel{display:flex;flex-direction:column;background:radial-gradient(ellipse at 50% 42%,#3b4844 0,#262b2b 54%,#242627 85%)}.panel-top{height:92px;padding:29px 32px;display:flex;justify-content:space-between;align-items:center}.section-label{font-size:28px;letter-spacing:.065em;font-weight:700}.section-label .index{color:var(--orange);margin-right:12px}.tank-state{font:800 32px Archivo,'Arial Black',sans-serif}.tank-art{width:1040px;height:492px;display:block;flex-shrink:0;overflow:visible}.tank-art text{font-family:Inter,Arial,sans-serif;font-size:28px;fill:var(--cream)}.tank-art .full-line{stroke:var(--cream);stroke-dasharray:8 9;opacity:.45}.water-move{transform:translateY(180px);transition:transform 1.15s cubic-bezier(.22,.7,.2,1)}.float-move{transform:translateY(180px);transition:transform .45s cubic-bezier(.2,.8,.2,1)}.wave{animation:wave 3.7s linear infinite}.wave.back{animation:wave 5.8s linear infinite reverse;opacity:.45}.bubble{animation:rise 3.8s linear infinite;transform-box:fill-box;transform-origin:center;opacity:0}.bubble.b2{animation-delay:-1.2s;animation-duration:4.7s}.bubble.b3{animation-delay:-2.6s}.flow{stroke-dasharray:14 15;animation:flow .65s linear infinite;opacity:0;transition:opacity .3s}.raw-down .flow{opacity:.75}.flapper{transform-origin:405px 421px;transition:transform .4s}.raw-down .flapper{transform:rotate(-29deg)}.unknown .water-move,.unknown .float-move{opacity:.15}.unknown .flow{opacity:0}.hardware{filter:drop-shadow(0 7px 5px #0005)}
-.switch-strip{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:64px;margin:0 32px;border:1px solid #69746c;border-radius:12px;background:#151b1bcc;font-weight:700;gap:20px}.switch-strip strong{color:var(--cyan);white-space:nowrap}.switch-strip span{white-space:nowrap}.switch-strip .pin{color:#c8c7bd;font-family:'JetBrains Mono',monospace}
+.tank-panel .health{margin-top:auto;margin-bottom:32px}
 .health{margin:22px 32px 0;padding:0 0 0 22px;min-height:78px;border-left:5px solid var(--olive);display:flex;align-items:center;gap:20px}.health-symbol{font:800 49px Archivo,sans-serif;display:grid;place-items:center;width:64px;height:64px;border:2px solid var(--olive);border-radius:50%;flex-shrink:0}.health-copy{flex:1;min-width:0}.health-title{font:800 35px/1.15 Archivo,'Arial Black',sans-serif;letter-spacing:-.02em}.health-detail{font-size:28px;margin-top:5px;color:#c8c9bf}.health-code{font:700 28px 'JetBrains Mono',monospace;border:1px solid var(--line);padding:8px 12px;border-radius:8px}
 [data-severity="warn"] .health{border-color:var(--orange)}[data-severity="warn"] .health-symbol{border-color:var(--orange);border-radius:10px}[data-severity="warn"] .health-code{border:2px dashed var(--orange)}[data-severity="crit"] .health{border-color:var(--red)}[data-severity="crit"] .health-symbol{border:5px double var(--cream);border-radius:8px;background:var(--red)}[data-severity="crit"] .health-code{border:5px double var(--cream);background:#772d18}[data-severity="crit"] .tank-panel{border:3px double #ca6a4f}
 .right{display:grid;grid-template-rows:300px 210px 216px;gap:24px}.counter-panel{color:var(--ink);background:radial-gradient(ellipse at 95% -10%,#ffe3a1 0,transparent 60%),linear-gradient(135deg,#f4b343,#f1a21a 65%,#df9010);border-color:#ffd085;box-shadow:0 0 48px #f1a21a0b}.counter-panel:before{content:"";position:absolute;width:460px;height:460px;border:1px solid #1e1f2120;border-radius:50%;right:-160px;top:-150px;pointer-events:none}.counter-top{padding:20px 30px 0;display:flex;align-items:center;justify-content:space-between;position:relative}.counter-top .section-label{font-weight:800;margin:0}.counter-top .star{font-size:40px;line-height:1}.counter{display:flex;height:142px;align-items:center;padding:0 30px;gap:7px;position:relative}.digit{position:relative;width:128px;height:140px;overflow:hidden;border-radius:9px;background:#1e1f21;color:var(--cream);box-shadow:inset 0 2px 8px #0008,0 2px 0 #ffe0a8;flex-shrink:0}.digit:after{content:"";position:absolute;top:50%;left:0;right:0;height:2px;background:#0006;box-shadow:0 1px 0 #f1efe411}.digit-track{display:flex;flex-direction:column;transform:translateY(0);will-change:transform}.digit-track span{display:block;height:140px;flex-shrink:0;text-align:center;font:900 124px/140px Archivo,'Arial Black',sans-serif;letter-spacing:-.055em;padding-right:5px}.counter-meta{display:flex;justify-content:space-between;padding:10px 30px 0;border-top:1px solid #1e1f2140;margin-top:8px;position:relative;gap:14px}.metric-label{font-size:28px;line-height:1.1}.metric-value{font:700 32px/1.2 'JetBrains Mono',monospace;margin-top:5px;letter-spacing:-.04em}.meta-last{text-align:right}
@@ -119,11 +119,8 @@ footer{height:50px;margin-top:24px;display:flex;align-items:center;justify-conte
 <path d="M165 46H875" stroke="#fff8e1" stroke-width="2" opacity=".8"/>
 <path d="M153 117H135Q120 117 120 103V91" fill="none" stroke="url(#metal)" stroke-width="13"/>
 <rect x="100" y="80" width="44" height="17" rx="7" fill="#f1a21a" stroke="#ffe3a6" stroke-width="2"/>
-<path d="M74 172H160M885 177H928V288H958" stroke="#a8b9ad" stroke-width="2" fill="none"/>
-<text x="50" y="143">FULL</text><text id="switchOnTank" x="928" y="224" text-anchor="middle">? UNKNOWN</text><text x="928" y="326" text-anchor="middle">FLOAT</text><text x="928" y="361" text-anchor="middle">SWITCH</text>
 <circle cx="640" cy="177" r="74" fill="none" stroke="#f1efe4" stroke-width="1" stroke-dasharray="4 9" opacity=".3"/>
 </svg>
-<div class="switch-strip"><span id="floatLabel">? FLOAT UNKNOWN</span><strong id="switchLabel">? UNKNOWN</strong><span class="pin" id="pinLabel">PIN READS ?</span></div>
 <div class="health" role="status" aria-live="polite" aria-atomic="true"><span class="health-symbol" id="healthSymbol">✕</span><div class="health-copy"><div class="health-title" id="healthTitle">ESP32 not reporting</div><div class="health-detail" id="healthDetail">Waiting for the first reading</div></div><div class="health-code" id="status">CRIT</div></div>
 </section>
 <div class="right">
@@ -135,7 +132,6 @@ footer{height:50px;margin-top:24px;display:flex;align-items:center;justify-conte
 </main></div>
 <script>
 'use strict';
-// This server serves HTML for every non-/state path. Embed the real logo.
 const $ = id => document.getElementById(id);
 const demo = new URLSearchParams(location.search).get('demo') === '1';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -190,8 +186,7 @@ function health(level,title,detail){
 }
 function unknownSwitch(){
   $('tankArt').classList.add('unknown');$('tankArt').classList.remove('raw-down');
-  $('floatLabel').textContent='? FLOAT UNKNOWN';$('switchLabel').textContent='? UNKNOWN';$('pinLabel').textContent='PIN READS ?';
-  $('tankState').textContent='? TANK UNKNOWN';$('switchOnTank').textContent='? UNKNOWN';$('tankDescription').textContent='No current switch reading. Water and float position are unknown.';
+  $('tankState').textContent='? TANK UNKNOWN';$('tankDescription').textContent='No current switch reading. Water and float position are unknown.';
 }
 function celebrate(){
   const layer=$('celebration');clearTimeout(celebrationTimer);stage.classList.remove('celebrating');
@@ -222,11 +217,10 @@ function applyState(s){
   if(known){
     $('tankArt').classList.remove('unknown');$('tankArt').classList.toggle('raw-down',!up);
     $('water').style.transform='translateY('+(up?0:180)+'px)';$('float').style.transform='translateY('+(up?0:180)+'px)';
-    $('floatLabel').textContent=up?'▲ FLOAT UP':'▼ FLOAT DOWN';$('tankState').textContent=up?'▲ TANK FULL':'▼ WATER DROPPED';
+    $('tankState').textContent=up?'▲ TANK FULL':'▼ WATER DROPPED';
   }
   if(wireKnown){
-    $('switchLabel').textContent=closed?'✓ CONNECTED':'✕ DISCONNECTED';$('pinLabel').textContent=closed?'PIN READS 0':'PIN READS 1';
-    $('switchOnTank').textContent=closed?'✓ CLOSED':'✕ OPEN';$('reedBottom').setAttribute('d',closed?'M640 196V174':'M640 196V183');
+    $('reedBottom').setAttribute('d',closed?'M640 196V174':'M640 196V183');
   }
   const pairing=known?'Float '+(up?'up':'down')+(wireKnown?', circuit '+(closed?'closed, pin reads zero.':'open, pin reads one.'):', wire reading unavailable.'):'Float position unknown.';
   $('tankDescription').textContent=pairing+(known?(up?' The tank is full.':' The water has dropped.'):'');
