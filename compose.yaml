@@ -18,6 +18,7 @@ services:
       SESSION_DRIVER: database
       SESSION_SECURE_COOKIE: "true"
       CACHE_STORE: database
+      TOILET_WRITE_TOKEN: ${TOILET_WRITE_TOKEN:-}
       HOMEY_URL: ${HOMEY_URL:-}
       HOMEY_API_KEY: ${HOMEY_API_KEY:-}
       HOMEY_LIVING_LIGHT_ID: ${HOMEY_LIVING_LIGHT_ID:-}

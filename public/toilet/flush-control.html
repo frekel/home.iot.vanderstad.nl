@@ -58,7 +58,7 @@ footer{height:50px;margin-top:24px;display:flex;align-items:center;justify-conte
 <header>
 <img class="logo" id="logo" alt="NetworkChuck" width="82" height="100">
 <div class="brand"><div class="eyebrow">MY TOILET / LIVE MONITOR</div><h1>FLUSH <span>CONTROL</span></h1></div>
-<div class="header-right"><div class="tagline">COFFEE.HACKING.TECH</div><div class="source" id="source">✕ WAITING FOR PI</div></div>
+<div class="header-right"><div class="tagline">COFFEE.HACKING.TECH</div><div class="source" id="source">✕ WAITING FOR ESP32</div></div>
 </header>
 <div class="layout">
 <section class="panel tank-panel" aria-label="Live tank and float switch">
@@ -127,7 +127,7 @@ footer{height:50px;margin-top:24px;display:flex;align-items:center;justify-conte
 <circle cx="640" cy="177" r="74" fill="none" stroke="#f1efe4" stroke-width="1" stroke-dasharray="4 9" opacity=".3"/>
 </svg>
 <div class="switch-strip"><span id="floatLabel">? FLOAT UNKNOWN</span><strong id="switchLabel">? UNKNOWN</strong><span class="pin" id="pinLabel">PIN READS ?</span></div>
-<div class="health" role="status" aria-live="polite" aria-atomic="true"><span class="health-symbol" id="healthSymbol">✕</span><div class="health-copy"><div class="health-title" id="healthTitle">Pi not reporting</div><div class="health-detail" id="healthDetail">Waiting for the first reading</div></div><div class="health-code" id="status">CRIT</div></div>
+<div class="health" role="status" aria-live="polite" aria-atomic="true"><span class="health-symbol" id="healthSymbol">✕</span><div class="health-copy"><div class="health-title" id="healthTitle">ESP32 not reporting</div><div class="health-detail" id="healthDetail">Waiting for the first reading</div></div><div class="health-code" id="status">CRIT</div></div>
 </section>
 <div class="right">
 <section class="panel counter-panel" aria-labelledby="counterTitle"><div class="counter-top"><h2 class="section-label" id="counterTitle">FLUSHES TODAY</h2><span class="star" aria-hidden="true">✦</span></div><div class="counter" id="counter" role="img" aria-label="Flush count unknown"></div><div class="counter-meta"><div><div class="metric-label">ALL-TIME TOTAL</div><div class="metric-value" id="total">—</div></div><div class="meta-last"><div class="metric-label">LAST FLUSH</div><div class="metric-value" id="last">—</div></div></div></section>
@@ -259,19 +259,19 @@ function applyState(s){
   $('warnLabel').classList.toggle('reached',lowFor>=warn);$('critLabel').classList.toggle('reached',lowFor>=crit);$('timerNote').textContent=low?'Time with tank low':'Ready for the next flush';
   const demoFast=demo&&demoPhase()>=51&&demoPhase()<59;
   if(s.stale){
-    health('CRIT','Watcher down','Pi data is stale. Check the watcher.');source('✕ WATCHER DOWN','');
-    $('timerNote').textContent='Last reported reading';$('footerCopy').textContent='Watcher down. Counts are the last received values.';
+    health('CRIT','ESP32 offline','ESP32 data is stale. Check Wi-Fi and the sensor.');source('✕ WATCHER DOWN','');
+    $('timerNote').textContent='Last reported reading';$('footerCopy').textContent='ESP32 offline. Counts are the last received values.';
   }else{
     if(lowFor>=crit)health('CRIT','Tank low for '+duration(lowFor),'Check for running water or water off.');
     else if(lowFor>=warn)health('WARN','Tank low for '+duration(lowFor),'Check for running water or water off.');
-    else if(!known)health('OK',low?'Tank low · switch unknown':'Tank full · switch unknown','Watcher reporting; raw switch unavailable.');
+    else if(!known)health('OK',low?'Tank low · switch unknown':'Tank full · switch unknown','ESP32 reporting; raw switch unavailable.');
     else if(low)health('OK',up?'Float returned · tank full':'Flush counted · tank low',pairing);
     else health('OK',up?'Tank full · ready to flush':'Water dropped · checking',pairing);
-    source(demo?(demoFast?'◇ DEMO · FAST CLOCK':'◇ DEMO · SIMULATED DATA'):'✓ PI CONNECTED',demo?'demo':'connected');
+    source(demo?(demoFast?'◇ DEMO · FAST CLOCK':'◇ DEMO · SIMULATED DATA'):'✓ ESP32 CONNECTED',demo?'demo':'connected');
     $('footerCopy').textContent=demoFast?'DEMO: alert timer runs 20× faster during this low-water test.':demo?'DEMO: flush every 12s. Includes a slosh and a low-water test.':"1 second low = 1 flush. A quick slosh doesn't count.";
   }
   const nextConnection=s.stale?'stale':'connected';
-  if(connection!==nextConnection)event(s.stale?'Watcher down':demo?'Demo feed connected':connection==='waiting'?'Pi feed connected':'Pi feed restored',s.now);
+  if(connection!==nextConnection)event(s.stale?'ESP32 offline':demo?'Demo feed connected':connection==='waiting'?'ESP32 feed connected':'ESP32 feed restored',s.now);
   if(!s.stale&&prev){
     const increased=(total!==null&&prev.total!==null&&total>prev.total)||(today!==null&&prev.today!==null&&today>prev.today&&s.day===prev.day);
     if(increased){celebrate();event('FLUSH #'+(today===null?'?':numberText(today)),s.last_flush||s.now,'event-flush');}
@@ -284,11 +284,11 @@ function applyState(s){
   prev={today,total,day:s.day,up:known?up:null,low,lowFor};connection=nextConnection;
 }
 function failed(){
-  health('CRIT','Pi not reporting','Connection lost. Check the Pi.');source('✕ PI DISCONNECTED','');unknownSwitch();
+  health('CRIT','ESP32 not reporting','Connection lost. Check the Pi.');source('✕ ESP32 DISCONNECTED','');unknownSwitch();
   $('lowTime').textContent='--:--';$('timerNote').textContent='No current reading';
   $('warnRing').style.strokeDashoffset=389.56;$('critRing').style.strokeDashoffset=477.52;
-  $('footerCopy').textContent='Pi not reporting. Counts are the last received values.';
-  if(connection!=='failed')event('✕ Pi not reporting',Date.now()/1000);connection='failed';
+  $('footerCopy').textContent='ESP32 not reporting. Counts are the last received values.';
+  if(connection!=='failed')event('✕ ESP32 not reporting',Date.now()/1000);connection='failed';
 }
 // Same /state fields, no network requests in demo. Five flushes/minute;
 // a 0.6s slosh never counts. One long low uses a clearly labelled 20× clock.
@@ -310,10 +310,10 @@ async function tick(){
   try{
     if(demo)applyState(demoState());
     else{
-      const response=await fetch('/state',{cache:'no-store',signal:controller.signal});
+      const response=await fetch('/api/toilet/state',{cache:'no-store',signal:controller.signal});
       if(!response.ok)throw new Error('HTTP '+response.status);applyState(await response.json());
     }
   }catch{failed();}finally{clearTimeout(timeout);busy=false;}
 }
-tick();setInterval(tick,300);
+tick();setInterval(tick,1000);
 </script></body></html>
