@@ -12,10 +12,6 @@ use Illuminate\Support\Facades\Route;
 Route::view('/', 'dashboard');
 Route::view('/measure', 'dashboard');
 
-// Restricted by the existing LAN-only Traefik router and Laravel session CSRF.
-Route::post('/dashboard/toilet/reset', [ToiletMonitorController::class, 'reset'])
-    ->middleware('throttle:15,1')->name('toilet.reset');
-
 Route::prefix('inventory/zolder/kisten')->name('inventory.attic-boxes.')->group(function () {
     Route::get('/', [AtticBoxInventoryController::class, 'index'])->name('index');
     Route::post('/open', [AtticBoxInventoryController::class, 'open'])->name('open');
