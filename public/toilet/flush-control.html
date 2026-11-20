@@ -42,7 +42,7 @@ header{position:relative;height:108px;display:flex;align-items:center;gap:28px;m
 .tank-panel .health{margin-top:auto;margin-bottom:32px}
 .health{margin:22px 32px 0;padding:0 0 0 22px;min-height:78px;border-left:5px solid var(--olive);display:flex;align-items:center;gap:20px}.health-symbol{font:800 49px Archivo,sans-serif;display:grid;place-items:center;width:64px;height:64px;border:2px solid var(--olive);border-radius:50%;flex-shrink:0}.health-copy{flex:1;min-width:0}.health-title{font:800 35px/1.15 Archivo,'Arial Black',sans-serif;letter-spacing:-.02em}.health-detail{font-size:28px;margin-top:5px;color:#c8c9bf}.health-code{font:700 28px 'JetBrains Mono',monospace;border:1px solid var(--line);padding:8px 12px;border-radius:8px}
 [data-severity="warn"] .health{border-color:var(--orange)}[data-severity="warn"] .health-symbol{border-color:var(--orange);border-radius:10px}[data-severity="warn"] .health-code{border:2px dashed var(--orange)}[data-severity="crit"] .health{border-color:var(--red)}[data-severity="crit"] .health-symbol{border:5px double var(--cream);border-radius:8px;background:var(--red)}[data-severity="crit"] .health-code{border:5px double var(--cream);background:#772d18}[data-severity="crit"] .tank-panel{border:3px double #ca6a4f}
-.right{display:grid;grid-template-rows:300px 210px 216px;gap:24px}.counter-panel{color:var(--ink);background:radial-gradient(ellipse at 95% -10%,#ffe3a1 0,transparent 60%),linear-gradient(135deg,#f4b343,#f1a21a 65%,#df9010);border-color:#ffd085;box-shadow:0 0 48px #f1a21a0b}.counter-panel:before{content:"";position:absolute;width:460px;height:460px;border:1px solid #1e1f2120;border-radius:50%;right:-160px;top:-150px;pointer-events:none}.counter-top{padding:20px 30px 0;display:flex;align-items:center;justify-content:space-between;position:relative}.counter-top .section-label{font-weight:800;margin:0}.counter-top .star{font-size:40px;line-height:1}.counter{display:flex;height:142px;align-items:center;padding:0 30px;gap:7px;position:relative}.digit{position:relative;width:128px;height:140px;overflow:hidden;border-radius:9px;background:#1e1f21;color:var(--cream);box-shadow:inset 0 2px 8px #0008,0 2px 0 #ffe0a8;flex-shrink:0}.digit:after{content:"";position:absolute;top:50%;left:0;right:0;height:2px;background:#0006;box-shadow:0 1px 0 #f1efe411}.digit-track{display:flex;flex-direction:column;transform:translateY(0);will-change:transform}.digit-track span{display:block;height:140px;flex-shrink:0;text-align:center;font:900 124px/140px Archivo,'Arial Black',sans-serif;letter-spacing:-.055em;padding-right:5px}.counter-meta{display:flex;justify-content:space-between;padding:10px 30px 0;border-top:1px solid #1e1f2140;margin-top:8px;position:relative;gap:14px}.metric-label{font-size:28px;line-height:1.1}.metric-value{font:700 32px/1.2 'JetBrains Mono',monospace;margin-top:5px;letter-spacing:-.04em}.meta-last{text-align:right}
+.right{display:grid;grid-template-rows:300px 210px 216px;gap:24px}.counter-panel{color:var(--ink);background:radial-gradient(ellipse at 95% -10%,#ffe3a1 0,transparent 60%),linear-gradient(135deg,#f4b343,#f1a21a 65%,#df9010);border-color:#ffd085;box-shadow:0 0 48px #f1a21a0b}.counter-panel:before{content:"";position:absolute;width:460px;height:460px;border:1px solid #1e1f2120;border-radius:50%;right:-160px;top:-150px;pointer-events:none}.counter-top{padding:20px 30px 0;display:flex;align-items:center;justify-content:space-between;position:relative}.counter-top .section-label{font-weight:800;margin:0}.counter-top .star{font-size:40px;line-height:1}.counter{display:flex;height:142px;align-items:center;padding:0 30px;gap:7px;position:relative}.digit{position:relative;width:128px;height:140px;overflow:hidden;border-radius:9px;background:#1e1f21;color:var(--cream);box-shadow:inset 0 2px 8px #0008,0 2px 0 #ffe0a8;flex-shrink:0}.digit:after{content:"";position:absolute;top:50%;left:0;right:0;height:2px;background:#0006;box-shadow:0 1px 0 #f1efe411}.digit-track{display:flex;flex-direction:column;transform:translateY(0);will-change:transform}.digit-track span{display:block;height:140px;flex-shrink:0;text-align:center;font:900 124px/140px Archivo,'Arial Black',sans-serif;letter-spacing:-.055em;padding-right:5px}.counter-meta{display:flex;justify-content:flex-end;padding:10px 30px 0;border-top:1px solid #1e1f2140;margin-top:8px;position:relative;gap:14px}.metric-label{font-size:28px;line-height:1.1}.metric-value{font:700 32px/1.2 'JetBrains Mono',monospace;margin-top:5px;letter-spacing:-.04em}.meta-last{text-align:right}
 .timer-panel{display:flex;align-items:center;padding:20px 30px;gap:28px}.timer-dial{position:relative;flex-shrink:0;width:174px;height:174px}.timer-dial svg{width:174px;height:174px;transform:rotate(-90deg)}.timer-track{fill:none;stroke:#4d5049;stroke-width:6}.timer-progress{fill:none;stroke:var(--orange);stroke-width:7;stroke-linecap:round;stroke-dasharray:477.52;stroke-dashoffset:477.52;transition:stroke-dashoffset .3s linear}.timer-progress.inner{stroke:var(--cyan);stroke-width:5;stroke-dasharray:389.56;stroke-dashoffset:389.56}.timer-face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column}.timer-face b{font:700 37px 'JetBrains Mono',monospace;letter-spacing:-.06em}.timer-face span{font-size:28px;color:var(--muted);margin-top:3px}.timer-copy{flex:1}.timer-copy h2{font:800 32px/1.2 Archivo,sans-serif;margin:0 0 10px}.thresholds{display:flex;flex-direction:column;gap:8px;font-family:'JetBrains Mono',monospace;font-size:28px}.thresholds span{white-space:nowrap}.thresholds .reached{font-weight:700;text-decoration:underline;text-underline-offset:5px}.threshold-note{font-size:28px;color:var(--muted);margin-top:12px}
 .events-panel{padding:20px 30px}.events-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.events-top h2{margin:0}.events-top span:last-child{color:var(--muted);font:500 28px 'JetBrains Mono',monospace}.events{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}.events li{display:flex;gap:14px;align-items:baseline;font-size:28px;white-space:nowrap;line-height:1.25}.events time{color:var(--muted);font:500 28px 'JetBrains Mono',monospace}.event-text{overflow:hidden;text-overflow:ellipsis}.event-flush .event-text{color:var(--orange);font-weight:800}.event-enter{animation:event-in .4s ease-out}.events-empty{color:var(--muted)}
 footer{height:50px;margin-top:24px;display:flex;align-items:center;justify-content:space-between;gap:24px;position:relative}.footer-copy{font-size:28px;color:#c3c4ba;display:flex;align-items:center;gap:14px}.footer-copy:before{content:"✦";color:var(--orange);font-size:32px}.sound{height:50px;padding:0 18px;border:1px solid #6b6b61;border-radius:8px;background:#2c2e2b;color:var(--cream);white-space:nowrap}.sound[aria-pressed="true"]{color:var(--orange);border-color:var(--orange)}
@@ -124,7 +124,7 @@ footer{height:50px;margin-top:24px;display:flex;align-items:center;justify-conte
 <div class="health" role="status" aria-live="polite" aria-atomic="true"><span class="health-symbol" id="healthSymbol">✕</span><div class="health-copy"><div class="health-title" id="healthTitle">ESP32 not reporting</div><div class="health-detail" id="healthDetail">Waiting for the first reading</div></div><div class="health-code" id="status">CRIT</div></div>
 </section>
 <div class="right">
-<section class="panel counter-panel" aria-labelledby="counterTitle"><div class="counter-top"><h2 class="section-label" id="counterTitle">FLUSHES TODAY</h2><span class="star" aria-hidden="true">✦</span></div><div class="counter" id="counter" role="img" aria-label="Flush count unknown"></div><div class="counter-meta"><div><div class="metric-label">ALL-TIME TOTAL</div><div class="metric-value" id="total">—</div></div><div class="meta-last"><div class="metric-label">LAST FLUSH</div><div class="metric-value" id="last">—</div></div></div></section>
+<section class="panel counter-panel" aria-labelledby="counterTitle"><div class="counter-top"><h2 class="section-label" id="counterTitle">TOTAL FLUSHES</h2><span class="star" aria-hidden="true">✦</span></div><div class="counter" id="counter" role="img" aria-label="Total flush count unknown"></div><div class="counter-meta"><div class="meta-last"><div class="metric-label">LAST FLUSH</div><div class="metric-value" id="last">—</div></div></div></section>
 <section class="panel timer-panel" aria-label="Low water alert timer"><div class="timer-dial"><svg viewBox="0 0 174 174" aria-hidden="true"><circle class="timer-track" cx="87" cy="87" r="76"/><circle class="timer-track" cx="87" cy="87" r="62"/><circle class="timer-progress" id="critRing" cx="87" cy="87" r="76"/><circle class="timer-progress inner" id="warnRing" cx="87" cy="87" r="62"/></svg><div class="timer-face"><b id="lowTime">--:--</b><span>LOW</span></div></div><div class="timer-copy"><h2 id="timerTitle">LOW-WATER TIMER</h2><div class="thresholds"><span id="warnLabel">⚠ WARN AT 2:00</span><span id="critLabel">✕ CRIT AT 10:00</span></div><div class="threshold-note" id="timerNote">Waiting for a reading</div></div></section>
 <section class="panel events-panel" aria-labelledby="eventsTitle"><div class="events-top"><h2 class="section-label" id="eventsTitle">RECENT ACTIVITY</h2><span id="clock">--:--:--</span></div><ol class="events" id="events" aria-label="Latest three events"><li class="events-empty">Waiting for the first reading…</li></ol></section>
 </div></div>
@@ -169,7 +169,7 @@ function setCount(value){
       track.animate([{transform:'translateY(0)'},{transform:'translateY(-140px)'}],{duration:730+i*70,easing:'cubic-bezier(.2,.8,.2,1)'});
     }else{track.append(next);track.style.transform='translateY(0)';}
   });
-  $('counter').setAttribute('aria-label',value==null?'Flush count unknown':numberText(value)+' flushes today');countValue=value;
+  $('counter').setAttribute('aria-label',value==null?'Flush count unknown':numberText(value)+' total flushes');countValue=value;
 }
 setCount(null);
 function event(text,timestamp,kind=''){
@@ -208,9 +208,8 @@ function applyState(s){
   const low=s.tank==='low',up=floatUp===true,known=typeof floatUp==='boolean',closed=s.switch_closed===true,wireKnown=typeof s.switch_closed==='boolean';
   const lowFor=low&&Number.isFinite(s.low_since)?Math.max(0,Math.floor(s.now-s.low_since)):0;
   const warn=Number.isFinite(s.warn)&&s.warn>0?s.warn:120,crit=Number.isFinite(s.crit)&&s.crit>0?s.crit:600;
-  const today=Number.isSafeInteger(s.flushes_today)&&s.flushes_today>=0?s.flushes_today:null;
   const total=Number.isSafeInteger(s.flushes_total)&&s.flushes_total>=0?s.flushes_total:null;
-  if(!s.stale&&((low&&!Number.isFinite(s.low_since))||today===null||total===null))throw new Error('Incomplete watcher data');
+  if(!s.stale&&((low&&!Number.isFinite(s.low_since))||total===null))throw new Error('Incomplete watcher data');
   // float_up instantly drives water/float targets; switch_closed is raw wire truth.
   // tank, low_since and counts come from the watcher's one-second debounce.
   unknownSwitch();
@@ -224,7 +223,7 @@ function applyState(s){
   }
   const pairing=known?'Float '+(up?'up':'down')+(wireKnown?', circuit '+(closed?'closed, pin reads zero.':'open, pin reads one.'):', wire reading unavailable.'):'Float position unknown.';
   $('tankDescription').textContent=pairing+(known?(up?' The tank is full.':' The water has dropped.'):'');
-  setCount(today);$('total').textContent=total===null?'—':numberText(total);
+  setCount(total);
   $('last').textContent=Number.isFinite(s.last_flush)&&s.last_flush>0?timeText(s.last_flush):'NO FLUSH YET';
   $('clock').textContent=timeText(s.now);$('lowTime').textContent=duration(lowFor);
   $('warnRing').style.strokeDashoffset=389.56*(1-Math.min(1,lowFor/warn));$('critRing').style.strokeDashoffset=477.52*(1-Math.min(1,lowFor/crit));
@@ -243,15 +242,15 @@ function applyState(s){
   const nextConnection=s.stale?'stale':'connected';
   if(connection!==nextConnection)event(s.stale?'ESP32 offline':demo?'Demo feed connected':connection==='waiting'?'ESP32 feed connected':'ESP32 feed restored',s.now);
   if(!s.stale&&prev){
-    const increased=(total!==null&&prev.total!==null&&total>prev.total)||(today!==null&&prev.today!==null&&today>prev.today&&s.day===prev.day);
-    if(increased){celebrate();event('FLUSH #'+(today===null?'?':numberText(today)),s.last_flush||s.now,'event-flush');}
+    const increased=total!==null&&prev.total!==null&&total>prev.total;
+    if(increased){celebrate();event('FLUSH #'+numberText(total),s.last_flush||s.now,'event-flush');}
     if(known&&up&&prev.up===false)event(prev.low?'Tank refilled':'Float returned · no new flush',s.now);
     if(lowFor>=warn&&prev.lowFor<warn)event('⚠ WARN · tank still low',s.now);
     if(lowFor>=crit&&prev.lowFor<crit)event('✕ CRIT · tank still low',s.now);
   }
   if(demo&&demoPhase()>=9.6&&demoPhase()<10.2&&!demoSloshLogged){event('Slosh ignored · no count',s.now);demoSloshLogged=true;}
   if(demo&&demoPhase()<9)demoSloshLogged=false;
-  prev={today,total,day:s.day,up:known?up:null,low,lowFor};connection=nextConnection;
+  prev={total,up:known?up:null,low,lowFor};connection=nextConnection;
 }
 function failed(){
   health('CRIT','ESP32 not reporting','Connection lost. Check the ESP32.');unknownSwitch();
@@ -271,7 +270,7 @@ function demoState(){
   const virtualAt=phase=>phase+Math.max(0,Math.min(phase-51,8))*19;
   const now=demoEpoch+cycle*212+virtualAt(p),lastStart=starts.filter(t=>p>=t+1).at(-1);
   const lastFlush=lastStart!==undefined?demoEpoch+cycle*212+virtualAt(lastStart+1):cycle>0?demoEpoch+(cycle-1)*212+virtualAt(52):null;
-  return {tank:counted?'low':'full',low_since:counted?demoEpoch+cycle*212+virtualAt(current):null,flushes_total:1432+n,flushes_today:6+n,day:new Date(demoEpoch*1000).toLocaleDateString('en-CA'),last_flush:lastFlush,updated:now,now,stale:false,switch_closed:down,float_up:!down,warn:120,crit:600};
+  return {tank:counted?'low':'full',low_since:counted?demoEpoch+cycle*212+virtualAt(current):null,flushes_total:1432+n,last_flush:lastFlush,updated:now,now,stale:false,switch_closed:down,float_up:!down,warn:120,crit:600};
 }
 async function tick(){
   if(busy)return;busy=true;

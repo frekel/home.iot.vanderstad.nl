@@ -26,8 +26,6 @@ class ToiletMonitorController extends Controller
 
         $inserted = DB::transaction(function () use ($data, $occurredAt): bool {
             DB::table('toilet_devices')->insertOrIgnore(['device_id' => $data['device_id'], 'flushes_total' => 0]);
-            $device = DB::table('toilet_devices')->where('device_id', $data['device_id'])->lockForUpdate()->first();
-
             $existing = DB::table('toilet_events')->where('device_id', $data['device_id'])
                 ->where('event_id', $data['event_id'])->first();
 
@@ -48,12 +46,7 @@ class ToiletMonitorController extends Controller
                 'received_at' => now()->utc()->format('Y-m-d H:i:s'),
             ]);
 
-            DB::table('toilet_devices')->where('device_id', $data['device_id'])->update([
-                'flushes_total' => max((int) $device->flushes_total, (int) $data['flushes_total']),
-                'last_flush_at' => $device->last_flush_at === null
-                    ? $occurredAt : max($device->last_flush_at, $occurredAt),
-            ]);
-
+            // Legacy event logging must never change the ESP32-owned total.
             return true;
         }, 3);
 
@@ -94,16 +87,23 @@ class ToiletMonitorController extends Controller
 
             $updates = [
                 'last_seen_at' => now()->utc()->format('Y-m-d H:i:s'),
-                'flushes_total' => max((int) $device->flushes_total, (int) $data['flushes_total']),
             ];
             $accepted = $device->observed_at === null || $observed >= $device->observed_at;
 
             if ($accepted) {
+                // The latest ESP32 heartbeat is the source of truth,
+                // including a deliberate decrease to zero after reflashing.
+                $incomingTotal = (int) $data['flushes_total'];
+                $previousTotal = (int) $device->flushes_total;
                 $updates += [
                     'observed_at' => $observed,
                     'tank' => $data['tank'],
                     'float_up' => $data['float_up'],
                     'low_since' => $lowSince?->format('Y-m-d H:i:s'),
+                    'flushes_total' => $incomingTotal,
+                    'last_flush_at' => $incomingTotal > $previousTotal
+                        ? $observed
+                        : ($incomingTotal < $previousTotal ? null : $device->last_flush_at),
                 ];
             }
 
@@ -113,42 +113,6 @@ class ToiletMonitorController extends Controller
         }, 3);
 
         return response()->json(['accepted' => $accepted]);
-    }
-
-    /**
-     * Starts a new visible counting period without rewriting the ESP32's
-     * monotonic counter or deleting event IDs (needed for safe retries).
-     */
-    public function reset(Request $request): JsonResponse
-    {
-        abort_unless($request->isSecure(), 403, 'HTTPS is required.');
-        abort_unless($request->isJson(), 415, 'Send application/json.');
-
-        $request->validate([
-            'confirm' => ['required', 'in:RESET'],
-        ]);
-
-        $resetAt = DB::transaction(function (): string {
-            $id = config('toilet.device_id');
-            DB::table('toilet_devices')->insertOrIgnore(['device_id' => $id, 'flushes_total' => 0]);
-            DB::table('toilet_devices')->where('device_id', $id)->lockForUpdate()->first();
-
-            $resetAt = now()->utc()->format('Y-m-d H:i:s');
-
-            DB::table('toilet_devices')->where('device_id', $id)->update([
-                'counter_reset_at' => $resetAt,
-            ]);
-
-            return $resetAt;
-        }, 3);
-
-        return response()->json([
-            'reset' => true,
-            'device_id' => config('toilet.device_id'),
-            'reset_at' => CarbonImmutable::parse($resetAt, 'UTC')->toIso8601String(),
-            'flushes_today' => 0,
-            'flushes_total' => 0,
-        ])->header('Cache-Control', 'no-store, private');
     }
 
     public function state(): JsonResponse
@@ -161,38 +125,11 @@ class ToiletMonitorController extends Controller
         $cutoff = $now->subSeconds(config('toilet.stale_after_seconds'));
         $stale = $lastSeen === null || $observed === null || $lastSeen->lt($cutoff) || $observed->lt($cutoff);
 
-        $today = $now->setTimezone('Europe/Amsterdam')->startOfDay();
-        $tomorrow = $today->addDay();
-        $todayCount = null;
-        $totalCount = null;
-        $lastFlush = null;
-
-        if ($device !== null) {
-            // Before the first reset, preserve the original raw hardware total.
-            // After a reset, only distinct events occurring after the reset
-            // contribute to either visible counter. Late queued test events
-            // cannot resurrect old flushes.
-            $resetAt = $device->counter_reset_at;
-            $events = DB::table('toilet_events')
-                ->where('device_id', $device->device_id);
-
-            if ($resetAt !== null) {
-                $events->where('occurred_at', '>', $resetAt);
-                $totalCount = (clone $events)->count();
-                $last = (clone $events)->max('occurred_at');
-                $lastFlush = $last ? CarbonImmutable::parse($last, 'UTC')->timestamp : null;
-            } else {
-                $totalCount = (int) $device->flushes_total;
-                $lastFlush = $device->last_flush_at
-                    ? CarbonImmutable::parse($device->last_flush_at, 'UTC')->timestamp
-                    : null;
-            }
-
-            $todayCount = (clone $events)
-                ->where('occurred_at', '>=', $today->utc()->format('Y-m-d H:i:s'))
-                ->where('occurred_at', '<', $tomorrow->utc()->format('Y-m-d H:i:s'))
-                ->count();
-        }
+        // One counter only: the last ESP32 heartbeat's authoritative total.
+        $totalCount = $device !== null ? (int) $device->flushes_total : null;
+        $lastFlush = $device?->last_flush_at
+            ? CarbonImmutable::parse($device->last_flush_at, 'UTC')->timestamp
+            : null;
 
         $floatUp = $device?->float_up === null ? null : (bool) $device->float_up;
 
@@ -204,12 +141,7 @@ class ToiletMonitorController extends Controller
             'switch_closed' => $floatUp === null ? null : ! $floatUp,
             'low_since' => $device?->low_since ? CarbonImmutable::parse($device->low_since, 'UTC')->timestamp : null,
             'flushes_total' => $totalCount,
-            'flushes_today' => $todayCount,
-            'day' => $today->format('Y-m-d'),
             'last_flush' => $lastFlush,
-            'reset_at' => $device?->counter_reset_at
-                ? CarbonImmutable::parse($device->counter_reset_at, 'UTC')->timestamp
-                : null,
             'updated' => $lastSeen?->timestamp,
             'now' => $now->timestamp,
             'stale' => $stale,

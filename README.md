@@ -153,3 +153,42 @@ A separate hourly HomeyScript can submit availability snapshots over local HTTPS
 See [setup, API contracts and Flow instructions](docs/homey-availability.md).
 Write and read tokens are separate from the existing Homey connection; the daily
 battery check and dashboard polling remain unchanged.
+
+## Toiletmonitor — één totaalteller, ESP32 is de bron
+
+De firmware staat in [`esphome/toilet-monitor.yaml`](esphome/toilet-monitor.yaml).
+De ESP32 bewaart `flush_total` en stuurt de **werkelijke totale waarde** mee
+met iedere `POST /api/toilet/heartbeat`. Home IoT neemt alleen de laatste geldige,
+op tijd geordende heartbeat over en toont deze waarde in **TOTAL FLUSHES**.
+Er is geen dagteller, server-side reset of resetknop meer. De oude
+`/api/toilet/events`-route blijft voor oude firmware bestaan, maar wijzigt
+de teller niet.
+
+De float-schakelaar zit tussen GPIO13 en GND; minimaal één seconde LOW na
+FULL telt als één spoeling. Het TM1637-display gebruikt zwart = GND,
+wit = 3V3, grijs = GPIO21 (CLK) en paars = GPIO22 (DIO).
+Het display heeft vier cijfers en toont de teller modulo 10.000.
+
+De firmware vergelijkt bij het opstarten de opgeslagen builddatum/-tijd met
+de huidige firmware. **Een nieuw gecompileerde firmware zet de ESP32-teller
+eenmalig op nul**; een gewone herstart of stroomonderbreking behoudt de
+teller. Het opnieuw flashen van exact dezelfde reeds gebouwde binary geldt
+niet als een nieuwe build. De server neemt na de eerste nieuwe heartbeat
+ook `flushes_total: 0` over. Er hoeft dus geen Docker-resetcommando te
+worden uitgevoerd; het opnieuw installeren van een nieuwe firmwarebuild is
+de beheerde resetprocedure.
+
+Installeer eerst de nieuwe Home IoT-backend, en flash daarna de ESP32.
+Zorg op de ESPHome-werkplek voor een lokaal `secrets.yaml` met
+`wifi_ssid`, `wifi_password` en `toilet_api_token`. Voeg dit bestand
+**niet toe aan GitHub**.
+
+```bash
+esphome config toilet-monitor.yaml
+esphome run toilet-monitor.yaml --device /dev/ttyUSB0
+```
+
+Controleer `Heartbeat HTTP 200` en vervolgens
+`GET /api/toilet/state`: de weergegeven `flushes_total` moet gelijk
+zijn aan het LED-display (zolang de teller onder 10.000 blijft). Na
+één gesimuleerde spoeling staan beide op 1.
