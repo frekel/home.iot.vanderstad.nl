@@ -1,0 +1,226 @@
+substitutions:
+  toilet_api_token: !secret toilet_api_token
+
+esphome:
+  name: toilet-monitor
+  friendly_name: Toilet Downstairs
+  # A new compiled firmware starts a fresh count at zero. Rebooting the
+  # same firmware (including power loss) keeps the saved count intact.
+  on_boot:
+    priority: -100
+    then:
+      - lambda: |-
+          const std::string build = std::string(__DATE__) + " " + __TIME__;
+          if (id(counter_firmware_build) != build) {
+            id(flush_total) = 0;
+            id(tank_ready) = false;
+            id(counter_firmware_build) = build;
+            id(heartbeat_dirty) = true;
+            ESP_LOGI("toilet", "New firmware: flush total reset to 0");
+          }
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+  level: DEBUG
+  baud_rate: 115200
+
+# Persist the counter and firmware stamp without the normal flash-write delay.
+preferences:
+  flash_write_interval: 0s
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: none
+
+http_request:
+  timeout: 15s
+  verify_ssl: true
+  max_concurrent_requests: 1
+
+# TM1637: black=GND, white=3V3, grey=GPIO21/CLK, purple=GPIO22/DIO.
+# The number on the display is precisely what is sent in each heartbeat.
+display:
+  - platform: tm1637
+    clk_pin: GPIO21
+    dio_pin: GPIO22
+    intensity: 3
+    update_interval: 1s
+    lambda: |-
+      it.printf("%04u", (unsigned int)(id(flush_total) % 10000));
+
+globals:
+  # The ESP32 is authoritative; the counter survives a regular reboot.
+  - id: flush_total
+    type: uint32_t
+    restore_value: true
+    initial_value: '0'
+
+  # A changed build stamp resets the count exactly once for each new firmware.
+  - id: counter_firmware_build
+    type: std::string
+    restore_value: true
+    max_restore_data_length: 32
+    initial_value: '""'
+
+  - id: tank_ready
+    type: bool
+    restore_value: true
+    initial_value: 'false'
+
+  - id: low_since_epoch
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+
+  - id: heartbeat_dirty
+    type: bool
+    restore_value: false
+    initial_value: 'true'
+
+  - id: heartbeat_attempted
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+
+  - id: last_heartbeat_try_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+
+binary_sensor:
+  - platform: gpio
+    id: toilet_float
+    name: Toilet Float Switch
+    pin:
+      number: GPIO13
+      mode: INPUT_PULLUP
+      inverted: true
+    filters:
+      - delayed_on_off: 50ms
+
+    # ON: the float dropped; a flush is counted only after 1 second.
+    on_press:
+      then:
+        - lambda: |-
+            auto now = id(toilet_clock).utcnow();
+            id(low_since_epoch) = now.is_valid() ? now.timestamp : 0;
+            id(heartbeat_dirty) = true;
+            ESP_LOGI("toilet", "Tank LOW");
+        - script.execute: confirm_flush
+        - script.execute: maybe_send_telemetry
+
+    # OFF: the float returned to the full position.
+    on_release:
+      then:
+        - script.stop: confirm_flush
+        - lambda: |-
+            id(tank_ready) = true;
+            id(low_since_epoch) = 0;
+            id(heartbeat_dirty) = true;
+            ESP_LOGI("toilet", "Tank FULL - ready");
+        - script.execute: maybe_send_telemetry
+
+script:
+  - id: confirm_flush
+    mode: restart
+    then:
+      - delay: 1s
+      - if:
+          condition:
+            binary_sensor.is_on: toilet_float
+          then:
+            - if:
+                condition:
+                  lambda: 'return id(tank_ready);'
+                then:
+                  - lambda: |-
+                      id(flush_total)++;
+                      id(heartbeat_dirty) = true;
+                      ESP_LOGI("toilet", "FLUSH DETECTED! Total: %u",
+                               (unsigned) id(flush_total));
+                  - script.execute: maybe_send_telemetry
+
+  # Multiple state changes are safe: never start overlapping HTTPS requests.
+  - id: maybe_send_telemetry
+    mode: restart
+    then:
+      - if:
+          condition:
+            and:
+              - wifi.connected:
+              - lambda: 'return id(toilet_clock).utcnow().is_valid();'
+              - not:
+                  script.is_running: send_telemetry
+              - lambda: |-
+                  const uint32_t elapsed = millis() - id(last_heartbeat_try_ms);
+                  return !id(heartbeat_attempted) || elapsed >= 30000 ||
+                    (id(heartbeat_dirty) && elapsed >= 5000);
+          then:
+            - script.execute: send_telemetry
+
+  - id: send_telemetry
+    mode: single
+    then:
+      - lambda: |-
+          id(last_heartbeat_try_ms) = millis();
+          id(heartbeat_attempted) = true;
+          id(heartbeat_dirty) = false;
+      - http_request.post:
+          url: https://home.iot.vanderstad.nl/api/toilet/heartbeat
+          request_headers:
+            Authorization: "Bearer ${toilet_api_token}"
+            Content-Type: application/json
+          json: |-
+            auto now = id(toilet_clock).utcnow();
+            const bool low = id(toilet_float).state;
+            root["device_id"] = "toilet-01";
+            root["tank"] = low ? "low" : "full";
+            root["float_up"] = !low;
+            root["flushes_total"] = id(flush_total);
+            root["observed_at"] = now.strftime("%Y-%m-%dT%H:%M:%SZ");
+            if (low) {
+              if (id(low_since_epoch) == 0)
+                id(low_since_epoch) = now.timestamp;
+              time_t timestamp = id(low_since_epoch);
+              struct tm utc;
+              gmtime_r(&timestamp, &utc);
+              char stamp[32];
+              strftime(stamp, sizeof(stamp), "%Y-%m-%dT%H:%M:%SZ", &utc);
+              root["low_since"] = stamp;
+            } else {
+              root["low_since"] = nullptr;
+            }
+          on_response:
+            then:
+              - lambda: |-
+                  const int status = response->status_code;
+                  ESP_LOGI("toilet_api", "Heartbeat HTTP %d", status);
+                  if (status < 200 || status >= 300) {
+                    id(heartbeat_dirty) = true;
+                    ESP_LOGW("toilet_api", "Heartbeat rejected; retry scheduled");
+                  }
+          on_error:
+            then:
+              - lambda: |-
+                  id(heartbeat_dirty) = true;
+                  ESP_LOGW("toilet_api", "Heartbeat failed; retry scheduled");
+
+time:
+  - platform: sntp
+    id: toilet_clock
+    timezone: Europe/Amsterdam
+    on_time_sync:
+      then:
+        - logger.log: "Toilet clock synchronized!"
+        - script.execute: maybe_send_telemetry
+
+# Short scheduler tick; actual heartbeats remain ~30s apart.
+interval:
+  - interval: 5s
+    then:
+      - script.execute: maybe_send_telemetry
